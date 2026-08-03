@@ -1,7 +1,1 @@
-{
-  "v": 1,
-  "key": 1,
-  "revoked": [],
-  "updated": "2026-08-03",
-  "sig": "6eZ/v5rPRjFzZ/WY+Mm4q1dDe4cTFr53u7lbU4kcGkYUCGxeTaBH/I+JIcYLJjH6t7yBNAUne7R0cw6q3KJ3DA=="
-}
+{"key":1,"revoked":["F09D2A7B-DF1A-454B-98A7-D1ED2D1D992D"],"sig":"LxAMHjQ23vnpPOR\/FM6YY5XoMBPeg1e+f1zcpYLJb0PynQ0GJ50Wt623Zs+X7aLSCMgq8ywh6TiTEeKzI8s6AQ==","updated":"2026-08-03","v":1}
