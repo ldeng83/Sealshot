@@ -4,6 +4,62 @@
     <title>Sealshot</title>
     <!-- newest items first -->
     <item>
+      <title>0.7.3</title>
+      <pubDate>Tue, 04 Aug 2026 00:34:57 +0000</pubDate>
+      <sparkle:version>17</sparkle:version>
+      <sparkle:shortVersionString>0.7.3</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>Privacy & Security</h2>
+<ul>
+<li>New setting: <b>Lock when Sealshot starts</b>, in Settings ▸ Privacy & Security (it appears once Enhanced Security is on, and starts out on). Leave it on and Sealshot asks for Touch ID every time it opens, as it always has. Turn it off and Sealshot opens ready to use — your captures are still encrypted on disk, but anyone using this Mac can open Sealshot and view them, so you're asked to confirm before it takes effect. Sealshot still re-locks when your Mac sleeps or the screen locks, and after the idle time you've set. Turning Enhanced Security off and on again puts the setting back on.</li>
+</ul>
+<h2>Fixes</h2>
+<ul>
+<li><b>Send Feedback…</b> no longer freezes Sealshot. The dialog now appears as a sheet on the front window, so Cancel and Compose both work; previously it opened as a separate window that could come up blank and titled "Untitled", leaving the whole app unresponsive with no way out but Force Quit.</li>
+<li>Clicking <b>Check Now</b> in Settings ▸ General no longer makes the <b>Automatically check for updates</b> switch appear to turn itself on. The setting was never actually changed — a manual check does not enable automatic ones, and it still doesn't — but the switch could redraw showing the opposite, which looked like Sealshot had quietly turned it back on. It now shows the real state, and re-reads it whenever you open Settings.</li>
+<li>The <b>Launch at login</b> switch in Settings no longer flips on its own when you click away to another app and come back. The setting itself was always correct — macOS was doing what you asked — but the switch could redraw showing the opposite, so it looked like Sealshot had changed it back. It now shows the real state, and re-checks it whenever you return to the app, so changes you make in System Settings ▸ General ▸ Login Items show up here too.</li>
+<li>Turning <b>Launch at login</b> off no longer fails silently after Sealshot has been updated in place. If macOS has lost track of the old registration, the switch now simply reads as off and turning it back on re-registers cleanly.</li>
+<li>If macOS is waiting for you to allow Sealshot in System Settings ▸ General ▸ Login Items, the Launch at login row now says so instead of showing the switch as off with no explanation.</li>
+<li>The welcome tour now stays in front of the editor window at startup instead of slipping behind it a moment after launch. It still steps aside normally when you switch to another app.</li>
+<li>The welcome tour listed the wrong key for scrolling capture — it showed ⌘⇧L, which now locks your library. It shows the real shortcut again, and every shortcut in the tour now reflects your own keys if you've changed them in Settings.</li>
+<li>The recent strip in the editor now says "No captures here yet." when it's empty, instead of showing an empty bar. With an Images or Videos filter on, it says "No images." / "No videos." so it's clear a filter is hiding things.</li>
+<li>Changing the save folder in Settings now actually switches libraries: the editor closes the open capture and returns to an empty canvas, and the recent strip and Library list the new location. They used to keep showing the old folder's captures. Your existing captures are not moved — they stay where they are.</li>
+<li>Opening an older license file can no longer shorten your update window. Sealshot now compares the file you open against the one already installed: a newer renewal replaces it, the same file says so, and an older one is refused. Opening a license for a different person asks first.</li>
+<li>Settings ▸ License now shows your license ID, with a button to copy it.</li>
+</ul>
+<h2>Licensing</h2>
+<ul>
+<li>Sealshot now tells you when your update window is about to close, in the month before it does, instead of letting you find out by installing a version your license doesn't cover. The app itself never expires — this only affects which new releases you can install. You can dismiss it.</li>
+<li>Settings ▸ License now has a <b>Renew</b> card in the month before your update window closes, and whenever you're running a version your license doesn't cover. It links straight to renewal with your license already identified, and to earlier downloads if you'd rather stay on the version you have. Volume licenses are renewed by invoice, so that card explains how instead of linking to the store.</li>
+<li>Once you have your renewal file, Settings ▸ License now shows you how to open it. The card with <b>Open License File…</b> used to disappear as soon as you were licensed — which was exactly when a renewal arrived — and any message about the file you opened disappeared with it. Those messages now always show.</li>
+<li>Settings ▸ License also shows your license type alongside the license ID, and shows both when your license doesn't cover this version — that's when you're most likely to be asked for them.</li>
+<li>Turning off <b>Automatically check for updates</b> now also stops Sealshot's background license-revocation check on launch — one network switch you can actually turn off. Revocations you've already received still apply.</li>
+<li><b>License files have a new format, and it is not backwards compatible.</b> A license issued from now on needs this version or later to open; a license issued before it will not open in this version. If you are holding a license file from an earlier build and it stops being accepted after updating, ask us for a fresh one at support@seal-shot.com and we will reissue it — your purchase and your update window are unchanged.</li>
+</ul>
+<h2>Welcome tour</h2>
+<ul>
+<li>The tour has caught up with the app: it now covers Live Capture, Collections and tags, Find in Image, Extract Data, and the single app-wide undo.</li>
+<li>Turning on Enhanced Security now comes with a reminder in the tour to save or print your Recovery Kit — without the recovery code, encrypted captures cannot be opened.</li>
+<li>The tour's first card explains the 14-day free trial and what keeps working after it ends.</li>
+<li>You can reopen the tour any time: Settings ▸ Startup ▸ Show welcome tour cards now has a <b>Show Now</b> button. It shows the tour straight away and leaves the startup setting alone.</li>
+<li>Intel Macs no longer see the "Smarter redaction" card. The enhanced on-device model it offers only runs on Apple silicon, so the card had nothing to offer — the tour is six cards there instead of seven.</li>
+</ul>
+<h2>Editor</h2>
+<ul>
+<li>You can now draw arrows, lines, shapes, pen strokes, text, and blur boxes past the edges of a screenshot. When you finish drawing, the canvas grows automatically to make room, so annotations that point off the image (or sit beside it) stay exactly where you drew them instead of being cut off at the edge. Undo still reverts the drawing and the canvas growth in one step.</li>
+<li>An arrow with an outline now gets a clean, even outline around the whole arrow — shaft <b>and</b> arrowhead. Previously the arrowhead's outline could balloon into a thick, oversized triangle because it was scaled with the outline width instead of offset around the head.</li>
+<li>The Arrow and Line tools now need a small deliberate drag before they draw — a tiny, accidental mouse twitch no longer leaves a stray arrow or line behind.</li>
+<li>The shape and arrow tool chooser (the dropdown from the toolbar pills) no longer cuts off tool names — <b>Rectangle</b>, <b>Ellipse</b>, <b>Line Arrow</b>, and <b>Free Arrow</b> now display in full instead of "Rectangl…" / "Line Arro…".</li>
+</ul>
+<h2>Capture</h2>
+<ul>
+<li>The scrolling-capture permission checklist now has a <b>Done</b> button instead of <b>Start Capture</b>. After you grant the permissions, Done simply closes the checklist — Sealshot no longer begins scrolling-capture on its own the moment you've finished granting access. Start the capture yourself whenever you're ready.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.7.3/Sealshot-0.7.3.zip" sparkle:edSignature="uBKUO9teoj9Mvx1gpPl4ezEgBeZBJAHn7QmtmKadW/0XV1/HPNq8PLimy/+TdTE4l5/A2syikb8Uos/hqR78Ag==" length="69359899" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>0.7.2</title>
       <pubDate>Wed, 22 Jul 2026 13:00:06 +0000</pubDate>
       <sparkle:version>14</sparkle:version>
