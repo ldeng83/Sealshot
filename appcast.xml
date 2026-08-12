@@ -14,17 +14,8 @@
 <ul>
 <li>A <b>floating capture window</b> lets you take one capture after another without the editor opening each time. It's a small panel that stays on top of your other apps, so it's there when you need it and out of the way when you don't — useful on a laptop, where macOS sometimes has no room for the Sealshot icon in the menu bar. Open it from the button at the top right of the editor window, or from <b>View › Floating Capture Window</b>.</li>
 </ul>
-<p>The single button shows the kind of capture you used last, so repeating it</p>
-<p>is one click; the rest — Save As, full screen, delayed, scrolling, Live</p>
-<p>Capture and both recording options — are one click deeper, under the <b>⋯</b></p>
-<p>button. Your last few captures appear as thumbnails alongside a count, since</p>
-<p>the editor stays out of your way, and the ⤢ button brings the editor back</p>
-<p>whenever you want it.</p>
-<p>Drag the panel anywhere; guide lines show the edges it will snap to, and</p>
-<p>letting go near a corner parks it there. It dims while you're not using it</p>
-<p>and turns solid as soon as you point at it, remembers where it sits on each</p>
-<p>of your displays, and follows you to whichever screen your pointer is on.</p>
-<p>While Sealshot is locked the panel stays out of sight.</p>
+<p>The single button shows the kind of capture you used last, so repeating it is one click; the rest — Save As, full screen, delayed, scrolling, Live Capture and both recording options — are one click deeper, under the <b>⋯</b> button. Your last few captures appear as thumbnails alongside a count, since the editor stays out of your way, and the ⤢ button brings the editor back whenever you want it.</p>
+<p>Drag the panel anywhere; guide lines show the edges it will snap to, and letting go near a corner parks it there. It dims while you're not using it and turns solid as soon as you point at it, remembers where it sits on each of your displays, and follows you to whichever screen your pointer is on. While Sealshot is locked the panel stays out of sight.</p>
 <h2>Performance</h2>
 <ul>
 <li>Selecting text on a capture is now instant even after quitting and reopening Sealshot. The text it finds is kept with the capture itself, so the reading only ever happens once — previously every relaunch started from scratch, which on an Intel Mac meant a wait of around ten seconds the first time you used <b>Live Text</b> or <b>Find in Image</b> on each capture. Captures with no text in them are remembered too, so those stop being re-read entirely. Editing a capture re-reads it, as it should.</li>
