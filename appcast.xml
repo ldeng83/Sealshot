@@ -4,6 +4,44 @@
     <title>Sealshot</title>
     <!-- newest items first -->
     <item>
+      <title>0.7.5</title>
+      <pubDate>Wed, 12 Aug 2026 20:20:56 +0000</pubDate>
+      <sparkle:version>19</sparkle:version>
+      <sparkle:shortVersionString>0.7.5</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>New</h2>
+<ul>
+<li>A <b>floating capture window</b> lets you take one capture after another without the editor opening each time. It's a small panel that stays on top of your other apps, so it's there when you need it and out of the way when you don't — useful on a laptop, where macOS sometimes has no room for the Sealshot icon in the menu bar. Open it from the button at the top right of the editor window, or from <b>View › Floating Capture Window</b>.</li>
+</ul>
+<p>The single button shows the kind of capture you used last, so repeating it</p>
+<p>is one click; the rest — Save As, full screen, delayed, scrolling, Live</p>
+<p>Capture and both recording options — are one click deeper, under the <b>⋯</b></p>
+<p>button. Your last few captures appear as thumbnails alongside a count, since</p>
+<p>the editor stays out of your way, and the ⤢ button brings the editor back</p>
+<p>whenever you want it.</p>
+<p>Drag the panel anywhere; guide lines show the edges it will snap to, and</p>
+<p>letting go near a corner parks it there. It dims while you're not using it</p>
+<p>and turns solid as soon as you point at it, remembers where it sits on each</p>
+<p>of your displays, and follows you to whichever screen your pointer is on.</p>
+<p>While Sealshot is locked the panel stays out of sight.</p>
+<h2>Performance</h2>
+<ul>
+<li>Selecting text on a capture is now instant even after quitting and reopening Sealshot. The text it finds is kept with the capture itself, so the reading only ever happens once — previously every relaunch started from scratch, which on an Intel Mac meant a wait of around ten seconds the first time you used <b>Live Text</b> or <b>Find in Image</b> on each capture. Captures with no text in them are remembered too, so those stop being re-read entirely. Editing a capture re-reads it, as it should.</li>
+</ul>
+<h2>Fixes</h2>
+<ul>
+<li><b>Find in Image</b> keeps up with your typing. Sealshot used to search the capture again on every single letter, so an eight-letter word meant eight searches — seven of them for half-words you never wanted results for. It now waits for a brief pause before searching, matching how the Library search already behaves. Clearing the field still empties the results at once, and pressing Return still jumps to the next match for exactly what you typed. Most noticeable on Intel Macs and on large captures.</li>
+<li>When you set an expiry date on a shared package, the calendar no longer offers dates that have already passed — picking one produced a package that arrived expired. An expiry now also lasts to the <b>end</b> of the day you pick, rather than to the time of day you happened to open the export panel, so "expires 20 August" means the whole of the 20th — and picking today gives the recipient the rest of today.</li>
+</ul>
+<h2>Privacy & Security</h2>
+<ul>
+<li>Fixed: on a library where Enhanced Security had been turned on once before and then turned off, turning it back on could stop halfway. Sealshot set up the new keys and reported the library as protected, but nothing was actually encrypted — every capture stayed readable on disk, and so did the plain search index holding text, titles and tags. A leftover key file from the earlier encrypted period was the cause; it is now discarded rather than treated as an error. If you have turned Enhanced Security on and the captures in your folder are still readable, turn it off and on again after updating.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.7.5/Sealshot-0.7.5.zip" sparkle:edSignature="OlPiC1b51wEOAy55MkZty8qalThu/HywRRBxxoFFiCMShxxuhm1OaLPCxyXe9LuJwaLYkWLMoujyO1WvLD8xCA==" length="69541695" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>0.7.4</title>
       <pubDate>Tue, 11 Aug 2026 13:55:34 +0000</pubDate>
       <sparkle:version>18</sparkle:version>
