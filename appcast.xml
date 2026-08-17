@@ -4,6 +4,39 @@
     <title>Sealshot</title>
     <!-- newest items first -->
     <item>
+      <title>0.7.6</title>
+      <pubDate>Mon, 17 Aug 2026 13:09:41 +0000</pubDate>
+      <sparkle:version>20</sparkle:version>
+      <sparkle:shortVersionString>0.7.6</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>New</h2>
+<ul>
+<li><b>Arrows can taper.</b> A tapered arrow is widest at its head and narrows away to the tail, which reads as a stroke of the pen rather than a drawn shape — it is the default for new arrows. Double-headed arrows taper from wide to narrow across their length, dashed arrows taper too, and freehand arrows stay an even width. Switch any arrow between <b>Tapered</b> and <b>Uniform</b> with the Shaft control, which appears both in the arrow tool's settings and on the panel for an arrow you have selected.</li>
+<li><b>A personal licence now covers three Macs</b>, up from two.</li>
+<li>Extract Structured Data results now have a <b>Text</b> tab alongside the formatted views, and a <b>Markdown</b> tab showing the raw markdown — the tabs sit centred across the top of the window.</li>
+<li>The floating capture window can be <b>pinned or unpinned</b>. It has always sat on top of everything; unpin it and other windows cover it, which is what you want when it is in the way but you are not done with it. An unpinned panel comes back with the editor — bring the editor forward and the panel is there again.</li>
+<li>The floating capture window has a <b>close button</b>, so you can dismiss it without going back to the editor. Closing it there is the same as switching it off from the editor: the button in the editor's toolbar updates, and it stays closed next time you open Sealshot.</li>
+<li><b>Drag a capture straight out of the floating window</b> — to Finder, to Mail, anywhere — the same as you can from the strip along the bottom of the editor.</li>
+<li><b>Tuck the floating window away</b>: drag it past any screen edge and it collapses to a slim line hugging that edge, with an arrow pointing back into the screen. Click the line — or pull it right off the edge — to bring the window back. Dragging the line around near the edges just moves it, without popping the window open.</li>
+<li>The floating window's thumbnails now <b>mirror your three newest captures</b>, videos included (marked with a play badge). Capture from anywhere — the editor, a keyboard shortcut, the menu bar — and the new capture appears; delete a capture, even in Finder, and its thumbnail goes away. The floating window and the editor's strip always agree on what's there.</li>
+<li><b>The editor window shrinks properly now.</b> It used to stop while still nearly a thousand points wide, because every tool button had to stay on screen. Drag it narrow and related buttons now tuck themselves into small menus instead — the capture modes gather under Capture, the two recording buttons pair up, the AI actions share one button, and the drawing tools group the way Arrow and Shape already do. Nothing is taken away: everything is one click further, and it all comes straight back as you widen the window. The zoom controls along the bottom do the same, so the editor now works at little more than half its old minimum width.</li>
+</ul>
+<h2>Fixes</h2>
+<ul>
+<li><b>Dragging captures onto a collection works again</b> — whether you drag one capture or a whole selection, they land in the collection instead of springing back.</li>
+<li><b>Dragging a capture out of the Library into another app works again.</b> Dropping onto Terminal, or anywhere that expects a plain file, no longer bounces back.</li>
+<li>Duplicating a capture twice now gives you <b>"copy 2"</b> rather than "copy copy", and duplicating again continues counting.</li>
+<li><b>Wide results scroll sideways</b> in the Extract Structured Data window. A table wider than the window had no way to be read; there is now a horizontal scroll bar, and it stays out of the way when everything already fits.</li>
+<li><b>Focus-area corner handles can be dragged again in Live Capture.</b> Grabbing a corner used to move the window layer underneath instead of resizing the focus area, and the cursor now previews which one you are about to get.</li>
+<li>Clicking the Sealshot icon in the Dock no longer throws away the tab you were on. It used to jump you to <b>Editor</b> every time, so a click meant to bring the window forward while you were part-way through the Library or Settings lost your place. A Dock click now simply brings the window to the front, leaving it exactly as you left it — and if you had closed the window, it comes back on the tab it was showing. Starting Sealshot afresh still opens on the Editor.</li>
+<li>The floating capture window's ⤢ button no longer jumps you to the Editor tab. Like clicking the Dock icon, it now simply brings the window back the way you left it.</li>
+<li>The floating capture window's buttons now explain themselves. Every control had a label written for it, but none ever appeared, because the panel is designed never to take focus and the tooltips only showed while Sealshot was the active app — which, when you are working from the panel, it never is.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.7.6/Sealshot-0.7.6.zip" sparkle:edSignature="CuZKHvavwFF0rar5HeTNPvrHdJyBHXmrVbVgcC1Qs5t/WYJMv/rmqECcNtUL7R4G6AYNLuqHKEme3HkimoY8Dw==" length="69642744" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>0.7.5</title>
       <pubDate>Wed, 12 Aug 2026 20:20:56 +0000</pubDate>
       <sparkle:version>19</sparkle:version>
