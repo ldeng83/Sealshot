@@ -4,6 +4,43 @@
     <title>Sealshot</title>
     <!-- newest items first -->
     <item>
+      <title>0.7.8</title>
+      <pubDate>Mon, 24 Aug 2026 23:24:06 +0000</pubDate>
+      <sparkle:version>22</sparkle:version>
+      <sparkle:shortVersionString>0.7.8</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>Fixes</h2>
+<ul>
+<li><b>One overlay when Live Text starts, not two.</b> Picking the Live Text tool sharpens the image first and then reads it, but both steps announced themselves at once, so two progress cards appeared stacked on the canvas. Worse, the text was being read twice — once from the image about to be replaced, then again from the sharpened one — which doubled the wait on every capture. Live Text now waits for the sharpened image before reading, so you see one step at a time and get your text sooner. Cancelling the sharpening now cancels the whole Live Text read, rather than leaving you in a text tool with nothing to select.</li>
+<li><b>Text in the middle of a wide line is no longer missing.</b> On a dense screenshot, a sentence running the full width of the image could come back with a chunk missing from the middle — invisible in Live Text, unfindable in search, absent from copied text and from anything built on the text, while the words on either side were there. Wide lines are now reassembled from the words Sealshot already read instead of being read a second time, so the whole line survives. Recognition is slightly faster on those images too.</li>
+<li><b>The pen draws a clean line that stays under your pointer.</b> Freehand strokes wobbled while you drew them — the ink appeared to lag behind and squirm — and finished with a small hook where you lifted the mouse. The line now follows the pointer as you draw, smooths once you finish rather than fighting you mid-stroke, and ends where you stopped.</li>
+<li><b>An arrow casts one shadow, not several.</b> Arrows are drawn as a line plus a head, and each piece was shadowed separately, so the seams showed.</li>
+<li><b>Restoring a capture puts it back where it was.</b> A capture deleted from the Scratch waiting room returned to your Library instead of to Scratch, which quietly turned "undo a delete" into "keep it". It now goes back where it came from.</li>
+<li><b>Keeping a capture scrolls it into view.</b> Filing one from Scratch selected it in the recent strip but often left it off the end of the strip, so you had to go looking for the thing you'd just filed.</li>
+<li><b>The video Info panel tells the truth about plain movies.</b> A recording saved as an ordinary movie file described itself as though it were a sealed package.</li>
+<li><b>A new canvas's thumbnail keeps up with what you draw on it.</b></li>
+<li><b>Dropping a file while holding ⌃ works.</b> Hold ⌃ while dragging — the key that hides the Sealshot window so you can see where you're dropping — and the drop used to bounce back rejected, because macOS treats ⌃ at the drop as "make an alias", which Sealshot's drags don't offer. The drop now lands the same with or without the key held. From the recent strip, the Library, and the floating window alike.</li>
+</ul>
+<h2>New</h2>
+<ul>
+<li><b>Recordings can be saved as plain movie files.</b> Settings ▸ Recording ▸ <b>Save recordings as</b> now offers <b>Movie file</b> instead of a Sealshot package: the recording lands in your save folder as a <code>.mov</code> or <code>.mp4</code> you can send anywhere immediately, with no export step. They still appear in the recent strip and the Library, play normally, and carry a small <b>MOV</b> or <b>MP4</b> tag in the corner of the thumbnail so you can tell at a glance which ones are ready to use. The trade: a movie file has no tags, no searchable text and — this is the important one — <b>no encryption</b>, even with Enhanced Security on. Sealshot asks you to confirm before switching for that reason. Packages remain the default and nothing changes for existing recordings.</li>
+<li><b>Choose your shortcut layout.</b> Settings ▸ Shortcuts now has a picker: <b>Letters</b>, the familiar ⌘⇧-letter scheme, or <b>System numbers</b>, which puts capture on the ⌘⇧-number row the way macOS and CleanShot users know it — ⌘⇧3 full screen, ⌘⇧4 area, ⌘⇧5 record, ⌘⇧6 repeat last capture, ⌘⇧7 scrolling, ⌘⇧8 delayed, and the rest of the row filled in.</li>
+</ul>
+<p>Change any individual key and it is remembered **under the layout you are on**, so the two are yours to shape separately: tune a key under System numbers, switch to Letters and back, and your key is still there. Switching never overwrites what you left in the other layout, and <b>Reset</b> puts the layout you are viewing back to its own defaults.</p>
+<p>If macOS still owns ⌘⇧3/4/5, Sealshot says so right there and takes you to the System Settings pane where you can hand them over — a key macOS handles first never reaches Sealshot at all.</p>
+<ul>
+<li><b>Choose whether captures join your Library.</b> A new switch in Settings ▸ Capture — <b>Add captures to Library</b>, on by default. Turn it off and captures behave exactly as before — they open in the editor and copy to the clipboard — but your Library stays untouched: good for sessions of throwaway shots you only mean to paste somewhere. Keeping one is a right-click away (<b>Add to Library</b> on the canvas), and unkept captures clean themselves up after 7 days. They're not gone in the meantime: a <b>Scratch</b> section appears in the Library sidebar, above Trash, whenever there are unkept captures — browse them there with the same actions the rest of the Library offers — preview, export, duplicate, rename, delete — and keep the good ones. Marking one as a favourite or putting it in a collection files it into the Library first, since an unkept capture would otherwise be swept up by the 7-day clean-up.</li>
+<li><b>Recordings can skip the Library too.</b> A matching switch in Settings ▸ Recording — deliberately separate, because an unkept recording is gigabytes where an unkept screenshot is kilobytes, and you may well want a scratch pile of one but not the other. Unkept recordings wait in Scratch with everything else, and the sidebar row shows how much space is sitting there, so the 7-day clean-up is never a surprise. With Enhanced Security on, unkept captures are encrypted exactly like everything else.</li>
+<li><b>Right-clicking a recording shows Sealshot's menu.</b> Paused video used to bring up macOS's own Live Text menu — Look Up, Translate, Search With Google — which offered to send your recording's contents to a search engine and hid Sealshot's actions entirely. Right-click now gives the same menu a screenshot does: Show in Finder, Show in Library, Export, and the rest.</li>
+<li><b>Open a capture straight from Finder.</b> Double-clicking a <code>.seal</code> used to say it couldn't be imported. It now opens: one already in your Library opens in place, and one from anywhere else is copied in first — into your Library, or into Scratch if you have captures set to skip it — so opening a capture off a USB stick doesn't leave you editing a file that may vanish. Captures brought in this way are dated as they arrive, so they appear where you'd expect: newest in the Library and the recent strip.</li>
+<li><b>The Library sidebar shows how much space you're using.</b> All Files, Trash and Scratch each carry their total size.</li>
+<li><b>Your captures look like your captures in Finder.</b> A <code>.seal</code> is now a single file rather than a folder-in-disguise, so Finder shows each capture's own picture instead of a wall of identical icons — and a capture is one file to copy, move, or send. <b>File ▸ Open Library Folder in Finder</b> (⇧⌘O) takes you there, and the All Files row in the Library sidebar offers the same. Existing captures convert themselves quietly in the background; nothing to do, and everything keeps working while it happens. Captures protected by Enhanced Security show no preview outside Sealshot, deliberately: the preview extension holds no keys and never asks for them.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.7.8/Sealshot-0.7.8.zip" sparkle:edSignature="1Kiblwea2AIFZxyNQADbmur2cVfzKk3ITwXWdSlJ1WIA4ss1GcKX8D7TO4NMbAwsIr3p5susHVwu3GCPgqkaDg==" length="70066578" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>0.7.7</title>
       <pubDate>Thu, 20 Aug 2026 15:49:43 +0000</pubDate>
       <sparkle:version>21</sparkle:version>
