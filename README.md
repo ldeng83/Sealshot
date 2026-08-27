@@ -1,10 +1,11 @@
 # Sealshot
 
-Privacy-first screenshots and screen recordings for macOS. Capture, record,
-annotate, redact, and extract data — with everything processed on your Mac.
-No account, no telemetry, no cloud.
+**Professional screen capture for macOS. Free and open source.**
 
-**[seal-shot.com](https://seal-shot.com)** · [Download the notarized app](https://seal-shot.com/download/) · [Documentation](https://seal-shot.com/docs/)
+Capture, record, annotate, redact, and extract data — everything processed on
+your Mac. No account. No telemetry. No cloud.
+
+**[seal-shot.com](https://seal-shot.com)** · [Download the notarized app](https://seal-shot.com/download/) · [Documentation](https://seal-shot.com/docs/) · [Donate](https://seal-shot.com/donate/)
 
 ## What it does
 
