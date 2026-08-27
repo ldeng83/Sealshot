@@ -4,6 +4,21 @@
     <title>Sealshot</title>
     <!-- newest items first -->
     <item>
+      <title>0.8.1</title>
+      <pubDate>Thu, 27 Aug 2026 18:13:52 +0000</pubDate>
+      <sparkle:version>24</sparkle:version>
+      <sparkle:shortVersionString>0.8.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>Changes</h2>
+<ul>
+<li><b>Sealshot is now donation-supported, on the honor system.</b> The occasional reminder asks for a donation of any amount, and its "I Already Donated" button — or the checkbox in the new <b>Settings ▸ Support</b> tab — turns it off for good. Nothing verifies it: that's the point.</li>
+<li><b>License files are retired.</b> Donations no longer come with a license, so there is nothing to activate, move between Macs, or lose. A license you already have keeps working exactly as before — Settings shows it as your supporter license, including one whose update window has lapsed, since there are no renewals for a lapse to sell. The License tab's activation machinery is gone with the files.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/ldeng83/Sealshot/releases/download/v0.8.1/Sealshot-0.8.1.zip" sparkle:edSignature="eNZGJXTwYebs24UYjr7O0WknDduomOdVbvJ7wG2zFhXntASwmnR+SNzLvrwxqPM6gUc+/24RJtXW3tC8FZ69Ag==" length="69531114" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>0.8.0</title>
       <pubDate>Wed, 26 Aug 2026 18:14:33 +0000</pubDate>
       <sparkle:version>23</sparkle:version>
