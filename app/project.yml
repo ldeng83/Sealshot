@@ -1,0 +1,204 @@
+name: Sealshot
+options:
+  createIntermediateGroups: true
+  deploymentTarget:
+    macOS: "14.0"
+  bundleIdPrefix: com.seal-shot
+  generateEmptyDirectories: true
+  groupSortPosition: bottom
+
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+    SWIFT_STRICT_CONCURRENCY: minimal
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: JY9UQ3JLAP
+    MARKETING_VERSION: "0.8.0"
+    CURRENT_PROJECT_VERSION: "23"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    SUPPORTS_MACCATALYST: NO
+    SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+
+packages:
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    from: "2.0.0"
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.6.0"  # keep resolved version in sync with SPARKLE_TOOLS_VERSION in scripts/release.sh
+  WebRTCAPM:
+    path: Packages/WebRTCAPM
+  GLiNER2Swift:
+    url: https://github.com/MacPaw/Gliner2Swift
+    revision: 8f08bc520953614aa417da3691761097712164c7
+
+targets:
+  RedactionEngineInterface:
+    type: framework
+    platform: macOS
+    sources:
+      - path: RedactionEngineInterface
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.seal-shot.sealshot.redactionengineinterface
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        DEFINES_MODULE: YES
+        GENERATE_INFOPLIST_FILE: YES
+
+  Sealshot-MAS:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources
+      - path: SharedPackage
+      - path: Resources/Assets.xcassets
+      - path: Resources/Models/RealESRGeneralX4V3.mlpackage
+      - path: Resources/Models/TATRDetection.mlpackage
+    dependencies:
+      - package: KeyboardShortcuts
+      - package: WebRTCAPM
+      - target: RedactionEngineInterface
+        embed: true
+        link: true
+      - target: SealshotQuickLook-MAS
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.seal-shot.sealshot
+        PRODUCT_NAME: Sealshot
+        INFOPLIST_FILE: Resources/MAS/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Resources/MAS/Sealshot.entitlements
+        ENABLE_APP_SANDBOX: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+  SealshotRedactionEngine:
+    type: bundle
+    platform: macOS
+    sources:
+      - path: RedactionEngine
+    dependencies:
+      - package: GLiNER2Swift
+      - target: RedactionEngineInterface
+        embed: false
+        link: true
+    settings:
+      base:
+        ARCHS: arm64
+        EXCLUDED_ARCHS[sdk=macosx*]: x86_64
+        PRODUCT_BUNDLE_IDENTIFIER: com.seal-shot.sealshot.redactionengine
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: RedactionEngine/Info.plist
+        LD_RUNPATH_SEARCH_PATHS: ["@loader_path/../../../../Frameworks"]
+
+  Sealshot-Direct:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources
+      - path: SharedPackage
+      - path: Resources/Assets.xcassets
+      - path: Resources/Models/RealESRGeneralX4V3.mlpackage
+      - path: Resources/Models/TATRDetection.mlpackage
+    dependencies:
+      - package: KeyboardShortcuts
+      - package: Sparkle
+      - package: WebRTCAPM
+      - target: RedactionEngineInterface
+        embed: true
+        link: true
+      - target: SealshotRedactionEngine
+        embed: true
+        copy:
+          destination: plugins
+      - target: SealshotQuickLook-Direct
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.seal-shot.sealshot.direct
+        PRODUCT_NAME: Sealshot
+        INFOPLIST_FILE: Resources/Direct/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Resources/Direct/Sealshot.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Stamped by scripts/release.sh at archive time (UTC yyyy-MM-dd) →
+        # Info.plist SealshotReleaseDate. Empty in dev builds = licensing
+        # fails open (no update-window gate).
+        SEALSHOT_RELEASE_DATE: ""
+
+  # Finder thumbnails for `.seal` captures. One appex per host app: an
+  # extension's bundle id must be prefixed by the app embedding it, and this
+  # project ships two (MAS and Direct) with different ids. Both build the same
+  # sources — only the identity differs.
+  SealshotQuickLook-MAS:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: QuickLookExtension/Shared
+      - path: QuickLookExtension/Thumbnail
+      - path: SharedPackage
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.seal-shot.sealshot.quicklook
+        PRODUCT_NAME: SealshotQuickLook
+        INFOPLIST_FILE: QuickLookExtension/Thumbnail/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: QuickLookExtension/Thumbnail/Extension.entitlements
+        SKIP_INSTALL: YES
+
+  SealshotQuickLook-Direct:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: QuickLookExtension/Shared
+      - path: QuickLookExtension/Thumbnail
+      - path: SharedPackage
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.seal-shot.sealshot.direct.quicklook
+        PRODUCT_NAME: SealshotQuickLook
+        INFOPLIST_FILE: QuickLookExtension/Thumbnail/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: QuickLookExtension/Thumbnail/Extension.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+        SKIP_INSTALL: YES
+
+  SealshotTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/SealshotTests
+      - path: Tests/SealshotTests/Fixtures
+        buildPhase: resources
+      - path: SharedPackage
+      # The Quick Look extension's package reader, compiled into the test
+      # bundle: an appex has no test target of its own, and the rule it
+      # enforces (an encrypted package yields NOTHING) is the one piece of
+      # this feature that must never regress.
+      - path: QuickLookExtension/Shared
+    dependencies:
+      - target: Sealshot-MAS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.seal-shot.sealshot.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Sealshot.app/Contents/MacOS/Sealshot"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+schemes:
+  Sealshot-MAS:
+    build:
+      targets:
+        Sealshot-MAS: all
+    test:
+      targets:
+        - SealshotTests
+    run:
+      config: Debug
+  Sealshot-Direct:
+    build:
+      targets:
+        Sealshot-Direct: all
+    run:
+      config: Debug

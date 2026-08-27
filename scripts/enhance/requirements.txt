@@ -1,0 +1,4 @@
+torch==2.2.2
+coremltools==8.1
+pillow==11.0.0
+numpy==1.26.4

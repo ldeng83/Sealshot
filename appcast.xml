@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Sealshot</title>
+    <!-- newest items first -->
+    <item>
+      <title>0.8.0</title>
+      <pubDate>Wed, 26 Aug 2026 18:14:33 +0000</pubDate>
+      <sparkle:version>23</sparkle:version>
+      <sparkle:shortVersionString>0.8.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>Changes</h2>
+<ul>
+<li><b>Sealshot is now free to use.</b> There is no trial and nothing expires. Every feature is unlocked whether or not you ever pay: full-resolution captures and recordings, redaction, Live Text, encryption, the Library — all of it, with no watermark and no capture ever refused. If you were previously past the trial and locked out of new captures, this version unlocks them again.</li>
+<li><b>What a license buys now is that Sealshot stops asking.</b> Once you have used it for a while, an occasional reminder appears after a capture — never before one, never during, and no more than once a fortnight — with a way to buy, to dismiss it, or to say you already have. A license turns it off for good.</li>
+<li><b>The trial countdown is gone from the app.</b> No banner across the top of the window, and no "days left" in Settings ▸ License.</li>
+<li><b>Updates are permanent.</b> A license now covers every future version of Sealshot, not 12 or 18 months of them. There is no window to watch, nothing to renew, and no version that arrives "after your license". Licenses issued from now on say so in plain text: *Updates — All future versions*.</li>
+<li><b>Bought before that changed? Your replacement is free.</b> If your license covers a fixed number of months, Settings ▸ License now says so and tells you how to get a permanent one at no cost — email support with the license ID shown there. It used to offer to sell you a renewal, which would have meant paying again for something you already own.</li>
+<li>The occasional support reminder now appears attached to the Sealshot window instead of on top of whatever you had switched to.</li>
+</ul>
+<h2>Fixed</h2>
+<ul>
+<li>The Editor / Library / Settings tabs could get stuck greyed out after an AI action (Enhance Clarity, Extract Data, Smart Redaction, Live Text), leaving the top of the window unusable until Sealshot was relaunched. The tabs now unfreeze as soon as the action's progress card leaves the screen, and switching tabs from the View menu clears any leftover freeze.</li>
+<li>The Export to Package sheet now says "Export stays disabled until you copy the passcode" right under the Copy button, instead of tucking that note further down the sheet.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.8.0/Sealshot-0.8.0.zip" sparkle:edSignature="YLDh5yprK6HM19sd/Bqk7IwKRo6+XJEIhfGgJ1g6KCe5XY6o2Kg1iQ+H/YxYkRq1CtN47Yex3X+vYX0e6EelDQ==" length="70070823" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>0.7.8</title>
+      <pubDate>Mon, 24 Aug 2026 23:24:06 +0000</pubDate>
+      <sparkle:version>22</sparkle:version>
+      <sparkle:shortVersionString>0.7.8</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>Fixes</h2>
+<ul>
+<li><b>One overlay when Live Text starts, not two.</b> Picking the Live Text tool sharpens the image first and then reads it, but both steps announced themselves at once, so two progress cards appeared stacked on the canvas. Worse, the text was being read twice — once from the image about to be replaced, then again from the sharpened one — which doubled the wait on every capture. Live Text now waits for the sharpened image before reading, so you see one step at a time and get your text sooner. Cancelling the sharpening now cancels the whole Live Text read, rather than leaving you in a text tool with nothing to select.</li>
+<li><b>Text in the middle of a wide line is no longer missing.</b> On a dense screenshot, a sentence running the full width of the image could come back with a chunk missing from the middle — invisible in Live Text, unfindable in search, absent from copied text and from anything built on the text, while the words on either side were there. Wide lines are now reassembled from the words Sealshot already read instead of being read a second time, so the whole line survives. Recognition is slightly faster on those images too.</li>
+<li><b>The pen draws a clean line that stays under your pointer.</b> Freehand strokes wobbled while you drew them — the ink appeared to lag behind and squirm — and finished with a small hook where you lifted the mouse. The line now follows the pointer as you draw, smooths once you finish rather than fighting you mid-stroke, and ends where you stopped.</li>
+<li><b>An arrow casts one shadow, not several.</b> Arrows are drawn as a line plus a head, and each piece was shadowed separately, so the seams showed.</li>
+<li><b>Restoring a capture puts it back where it was.</b> A capture deleted from the Scratch waiting room returned to your Library instead of to Scratch, which quietly turned "undo a delete" into "keep it". It now goes back where it came from.</li>
+<li><b>Keeping a capture scrolls it into view.</b> Filing one from Scratch selected it in the recent strip but often left it off the end of the strip, so you had to go looking for the thing you'd just filed.</li>
+<li><b>The video Info panel tells the truth about plain movies.</b> A recording saved as an ordinary movie file described itself as though it were a sealed package.</li>
+<li><b>A new canvas's thumbnail keeps up with what you draw on it.</b></li>
+<li><b>Dropping a file while holding ⌃ works.</b> Hold ⌃ while dragging — the key that hides the Sealshot window so you can see where you're dropping — and the drop used to bounce back rejected, because macOS treats ⌃ at the drop as "make an alias", which Sealshot's drags don't offer. The drop now lands the same with or without the key held. From the recent strip, the Library, and the floating window alike.</li>
+</ul>
+<h2>New</h2>
+<ul>
+<li><b>Recordings can be saved as plain movie files.</b> Settings ▸ Recording ▸ <b>Save recordings as</b> now offers <b>Movie file</b> instead of a Sealshot package: the recording lands in your save folder as a <code>.mov</code> or <code>.mp4</code> you can send anywhere immediately, with no export step. They still appear in the recent strip and the Library, play normally, and carry a small <b>MOV</b> or <b>MP4</b> tag in the corner of the thumbnail so you can tell at a glance which ones are ready to use. The trade: a movie file has no tags, no searchable text and — this is the important one — <b>no encryption</b>, even with Enhanced Security on. Sealshot asks you to confirm before switching for that reason. Packages remain the default and nothing changes for existing recordings.</li>
+<li><b>Choose your shortcut layout.</b> Settings ▸ Shortcuts now has a picker: <b>Letters</b>, the familiar ⌘⇧-letter scheme, or <b>System numbers</b>, which puts capture on the ⌘⇧-number row the way macOS and CleanShot users know it — ⌘⇧3 full screen, ⌘⇧4 area, ⌘⇧5 record, ⌘⇧6 repeat last capture, ⌘⇧7 scrolling, ⌘⇧8 delayed, and the rest of the row filled in.</li>
+</ul>
+<p>Change any individual key and it is remembered **under the layout you are on**, so the two are yours to shape separately: tune a key under System numbers, switch to Letters and back, and your key is still there. Switching never overwrites what you left in the other layout, and <b>Reset</b> puts the layout you are viewing back to its own defaults.</p>
+<p>If macOS still owns ⌘⇧3/4/5, Sealshot says so right there and takes you to the System Settings pane where you can hand them over — a key macOS handles first never reaches Sealshot at all.</p>
+<ul>
+<li><b>Choose whether captures join your Library.</b> A new switch in Settings ▸ Capture — <b>Add captures to Library</b>, on by default. Turn it off and captures behave exactly as before — they open in the editor and copy to the clipboard — but your Library stays untouched: good for sessions of throwaway shots you only mean to paste somewhere. Keeping one is a right-click away (<b>Add to Library</b> on the canvas), and unkept captures clean themselves up after 7 days. They're not gone in the meantime: a <b>Scratch</b> section appears in the Library sidebar, above Trash, whenever there are unkept captures — browse them there with the same actions the rest of the Library offers — preview, export, duplicate, rename, delete — and keep the good ones. Marking one as a favourite or putting it in a collection files it into the Library first, since an unkept capture would otherwise be swept up by the 7-day clean-up.</li>
+<li><b>Recordings can skip the Library too.</b> A matching switch in Settings ▸ Recording — deliberately separate, because an unkept recording is gigabytes where an unkept screenshot is kilobytes, and you may well want a scratch pile of one but not the other. Unkept recordings wait in Scratch with everything else, and the sidebar row shows how much space is sitting there, so the 7-day clean-up is never a surprise. With Enhanced Security on, unkept captures are encrypted exactly like everything else.</li>
+<li><b>Right-clicking a recording shows Sealshot's menu.</b> Paused video used to bring up macOS's own Live Text menu — Look Up, Translate, Search With Google — which offered to send your recording's contents to a search engine and hid Sealshot's actions entirely. Right-click now gives the same menu a screenshot does: Show in Finder, Show in Library, Export, and the rest.</li>
+<li><b>Open a capture straight from Finder.</b> Double-clicking a <code>.seal</code> used to say it couldn't be imported. It now opens: one already in your Library opens in place, and one from anywhere else is copied in first — into your Library, or into Scratch if you have captures set to skip it — so opening a capture off a USB stick doesn't leave you editing a file that may vanish. Captures brought in this way are dated as they arrive, so they appear where you'd expect: newest in the Library and the recent strip.</li>
+<li><b>The Library sidebar shows how much space you're using.</b> All Files, Trash and Scratch each carry their total size.</li>
+<li><b>Your captures look like your captures in Finder.</b> A <code>.seal</code> is now a single file rather than a folder-in-disguise, so Finder shows each capture's own picture instead of a wall of identical icons — and a capture is one file to copy, move, or send. <b>File ▸ Open Library Folder in Finder</b> (⇧⌘O) takes you there, and the All Files row in the Library sidebar offers the same. Existing captures convert themselves quietly in the background; nothing to do, and everything keeps working while it happens. Captures protected by Enhanced Security show no preview outside Sealshot, deliberately: the preview extension holds no keys and never asks for them.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.7.8/Sealshot-0.7.8.zip" sparkle:edSignature="1Kiblwea2AIFZxyNQADbmur2cVfzKk3ITwXWdSlJ1WIA4ss1GcKX8D7TO4NMbAwsIr3p5susHVwu3GCPgqkaDg==" length="70066578" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>0.7.7</title>
+      <pubDate>Thu, 20 Aug 2026 15:49:43 +0000</pubDate>
+      <sparkle:version>21</sparkle:version>
+      <sparkle:shortVersionString>0.7.7</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>New</h2>
+<ul>
+<li><b>The floating window can hide itself.</b> Turn on **Hide to Edge Automatically** in its ⋯ menu and the panel tucks against the nearest edge as soon as your pointer leaves it, staying out of the way until you click the arrow to bring it back. It reappears beside that edge rather than jumping back to where it started, so peeking at it doesn't move it around, and it returns to the exact spot you last slid the line to. It slides in and out, the same motion the window uses when it follows you to another screen. Clicking anywhere else tucks it away too, so it doesn't linger after a cancelled capture, and you can still drag it around freely. To bring it back, click the arrow — or just rest your pointer on the line for a moment and it opens by itself, so passing over it on the way somewhere else leaves it be. It grows out of the line rather than sliding in from off the screen, and it stays where it opens: it used to get pulled into the nearest corner, so peeking at a window tucked near one moved it every time. Off unless you turn it on.</li>
+<li><b>Opening it by hovering doesn't pop up a file name.</b> Resting on the line to open the panel used to bring up a tooltip naming whichever capture landed under the pointer — a file you never pointed at. The names now wait until you move the pointer onto a thumbnail deliberately.</li>
+<li><b>Repeat the last capture — ⌘⇧A.</b> Captured a region and want the same box again? Press ⌘⇧A (or <b>Capture ▸ Repeat Last Capture</b>) and Sealshot grabs it immediately: no overlay, no dragging, no reselecting. The outline flashes so you can see what it took. The menu item shows the area's size, and the area is remembered between launches, so a session of step-by-step screenshots stays a single keystroke each. If the screen that area was on is gone — a monitor unplugged, or the resolution changed — Sealshot asks you to drag a new one instead of guessing, and that becomes the area from then on.</li>
+<li><b>Reset Floating Window Position.</b> New item in the <b>View</b> menu: it undocks the floating window, opens it if it was closed, and puts it in the middle of the screen you're using, forgetting every edge it was docked to. It's in the menu bar rather than the window's own ⋯ menu because the situation it exists for — a window you can't see — is exactly the one where you can't reach that menu.</li>
+<li><b>A tucked-away window follows you between screens.</b> The slim line now moves to whichever display your pointer is on, keeping the same edge and the same place along it, exactly as the full window already did. Dragging the panel across to another screen keeps it under your pointer, instead of jumping to the edge for a moment and coming back.</li>
+</ul>
+<h2>Editor</h2>
+<ul>
+<li>Dragging a screenshot out of Sealshot no longer means moving the window first: hold ⌃ (control) while dragging and the window gets out of your way so you can see where you're dropping. Let go and it comes straight back. The drag itself shows the reminder while you hold the file.</li>
+<li>Right-clicking an object on the canvas now offers <b>Cut</b>, <b>Copy</b>, <b>Paste</b> and <b>Duplicate</b>, alongside the arrange, flip and delete actions that were already there. ⌘D duplicates whatever you have selected, dropping the copy slightly below and to the right, and it leaves your clipboard alone. The same actions are in the Edit menu.</li>
+<li>Right-clicking an empty part of the canvas now offers <b>Export to Image</b>, <b>Export to Package…</b>, and — for a recording — <b>Export to Video…</b>, next to the Show in Finder and Show in Library actions already there. It's the same set the recent strip offers, so you can export the capture you're editing without leaving it.</li>
+</ul>
+<h2>Privacy & Security</h2>
+<ul>
+<li>Sealshot now asks you to confirm your recovery code <b>every 30 days</b> rather than every 90. A code that was copied down wrong, or saved somewhere you can no longer find, is already useless the day you write it — waiting three months just means finding out later, when the paper is likelier gone too. The prompt now also says why it's asking and when the next check falls, so it's clear it's a memory check rather than something being wrong. Generating a new code or replacing your key still counts as a check and starts the 30 days over.</li>
+</ul>
+<h2>Fixes</h2>
+<ul>
+<li><b>You can drop an image onto a canvas that already has one.</b> Dragging a picture — from the recent strip, the Library, or the Finder — onto an open capture did nothing at all; it only worked on an empty canvas. It now lands as an overlay you can move and resize, wherever you drop it.</li>
+<li><b>The floating window survives unplugging a monitor.</b> If it was on a display you disconnected, it vanished — stranded at coordinates that no longer existed, with nothing to grab and no way back short of restarting Sealshot. A tucked-away one was stranded the same way, with no arrow left to click. It now moves itself onto a screen you still have the moment the displays change, keeping the edge it was tucked against. Plug the display back in and it still remembers where you had docked it there.</li>
+<li><b>A closed window stays closed.</b> Close the Sealshot window (not quit) and take a capture: the window used to reopen itself, putting the big editor back over whatever you were documenting. Captures now land quietly in the Library and the recent strip, and the window stays shut until you ask for it — ⌘⇧E, the Library shortcut, the Dock icon, or the menu bar.</li>
+<li><b>A tucked-away floating window stays tucked away.</b> Drag it to a screen edge so it collapses to a line, and it now comes back that way next time you open Sealshot — same edge, same spot — instead of reopening as a full panel.</li>
+<li><b>Library thumbnails appear after you unlock.</b> If Sealshot opened while still locked — starting it at login, say — the Library filled with grey placeholder icons and kept them for the rest of the session, because a protected capture's preview can only be read once you have unlocked. The Library now fills them in the moment you unlock.</li>
+<li><b>Dragging the ends of a flipped line or arrow works again.</b> After flipping one, the end handles fought the pointer — dragging moved things the wrong way or not at all. They now follow the cursor as they always did. Flipping looks exactly the same as before.</li>
+<li><b>A value that wraps onto the next line is redacted along its whole length.</b> In a narrow window a long token — an access token, a connection string, a private key — spills onto the following line, and only the first line was being covered, which for a secret is no protection at all. The remainder is now covered too. Sensitive fields only: ordinary wrapped text, and the line below a field in an app window, are left alone.</li>
+<li><b>IPv6 addresses are redacted even when text recognition garbles them.</b> Long runs of colons often come back with stray spaces — `2001:db8: 85a3: :8a2e…` — which stopped the address being recognised at all. A whole address is also covered now, rather than everything up to the last group.</li>
+<li><b>Smart Redaction catches private keys reliably.</b> It looked for the exact <code>-----BEGIN PRIVATE KEY-----</code> banner, but text recognition often reads that run of dashes as one or two, and the key was then missed completely. The wording alone is now enough. It also redacts the key material itself — everything between the BEGIN and END markers — rather than just the banner lines, whether the key is wrapped across many lines or sits on one long line inside a JSON string.</li>
+<li><b>Smart Redaction now finds secrets in JSON, YAML and config screenshots.</b> It recognises fields by their label — "Password:", "Account Number:" — but a structured file writes them as <code>"password":</code>, and the quote around the key was enough to stop every one of those rules matching. So on a screenshot of a config file or an API response, only values it could recognise by shape (an obvious API-key format, a long random string) were being caught, and things like a PIN, a CVV, a security answer or a VPN password were left in the clear. Keys written as <code>snake_case</code> (<code>tax_id</code>, <code>passport_number</code>) now match too, and the vocabulary has grown to cover PINs, card security codes, security questions, client IDs and secrets, session and refresh tokens, connection strings, recovery codes, SWIFT/BIC, hostnames, usernames and postal codes.</li>
+<li><b>Pasting a large image into a new canvas now resizes the canvas to fit it.</b> A fresh canvas is 800 × 500, so anything bigger used to be shrunk down to a corner of it. Paste into an empty canvas and it now takes the image's size at full resolution, the same as File ▸ New from Clipboard. Pasting onto a screenshot is unchanged — there the image still arrives as an overlay you can move and resize.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.7.7/Sealshot-0.7.7.zip" sparkle:edSignature="UOPYb99c0hv4PjQV1VI/nbH0RegQj/0vleNkIwEVh+NhAtxZ0kvHl7uIyX01tcmAg43zhsmURZRHpNBCkeTUBA==" length="69752558" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>0.7.6</title>
+      <pubDate>Mon, 17 Aug 2026 13:09:41 +0000</pubDate>
+      <sparkle:version>20</sparkle:version>
+      <sparkle:shortVersionString>0.7.6</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>New</h2>
+<ul>
+<li><b>Arrows can taper.</b> A tapered arrow is widest at its head and narrows away to the tail, which reads as a stroke of the pen rather than a drawn shape — it is the default for new arrows. Double-headed arrows taper from wide to narrow across their length, dashed arrows taper too, and freehand arrows stay an even width. Switch any arrow between <b>Tapered</b> and <b>Uniform</b> with the Shaft control, which appears both in the arrow tool's settings and on the panel for an arrow you have selected.</li>
+<li><b>A personal licence now covers three Macs</b>, up from two.</li>
+<li>Extract Structured Data results now have a <b>Text</b> tab alongside the formatted views, and a <b>Markdown</b> tab showing the raw markdown — the tabs sit centred across the top of the window.</li>
+<li>The floating capture window can be <b>pinned or unpinned</b>. It has always sat on top of everything; unpin it and other windows cover it, which is what you want when it is in the way but you are not done with it. An unpinned panel comes back with the editor — bring the editor forward and the panel is there again.</li>
+<li>The floating capture window has a <b>close button</b>, so you can dismiss it without going back to the editor. Closing it there is the same as switching it off from the editor: the button in the editor's toolbar updates, and it stays closed next time you open Sealshot.</li>
+<li><b>Drag a capture straight out of the floating window</b> — to Finder, to Mail, anywhere — the same as you can from the strip along the bottom of the editor.</li>
+<li><b>Tuck the floating window away</b>: drag it past any screen edge and it collapses to a slim line hugging that edge, with an arrow pointing back into the screen. Click the line — or pull it right off the edge — to bring the window back. Dragging the line around near the edges just moves it, without popping the window open.</li>
+<li>The floating window's thumbnails now <b>mirror your three newest captures</b>, videos included (marked with a play badge). Capture from anywhere — the editor, a keyboard shortcut, the menu bar — and the new capture appears; delete a capture, even in Finder, and its thumbnail goes away. The floating window and the editor's strip always agree on what's there.</li>
+<li><b>The editor window shrinks properly now.</b> It used to stop while still nearly a thousand points wide, because every tool button had to stay on screen. Drag it narrow and related buttons now tuck themselves into small menus instead — the capture modes gather under Capture, the two recording buttons pair up, the AI actions share one button, and the drawing tools group the way Arrow and Shape already do. Nothing is taken away: everything is one click further, and it all comes straight back as you widen the window. The zoom controls along the bottom do the same, so the editor now works at little more than half its old minimum width.</li>
+</ul>
+<h2>Fixes</h2>
+<ul>
+<li><b>Dragging captures onto a collection works again</b> — whether you drag one capture or a whole selection, they land in the collection instead of springing back.</li>
+<li><b>Dragging a capture out of the Library into another app works again.</b> Dropping onto Terminal, or anywhere that expects a plain file, no longer bounces back.</li>
+<li>Duplicating a capture twice now gives you <b>"copy 2"</b> rather than "copy copy", and duplicating again continues counting.</li>
+<li><b>Wide results scroll sideways</b> in the Extract Structured Data window. A table wider than the window had no way to be read; there is now a horizontal scroll bar, and it stays out of the way when everything already fits.</li>
+<li><b>Focus-area corner handles can be dragged again in Live Capture.</b> Grabbing a corner used to move the window layer underneath instead of resizing the focus area, and the cursor now previews which one you are about to get.</li>
+<li>Clicking the Sealshot icon in the Dock no longer throws away the tab you were on. It used to jump you to <b>Editor</b> every time, so a click meant to bring the window forward while you were part-way through the Library or Settings lost your place. A Dock click now simply brings the window to the front, leaving it exactly as you left it — and if you had closed the window, it comes back on the tab it was showing. Starting Sealshot afresh still opens on the Editor.</li>
+<li>The floating capture window's ⤢ button no longer jumps you to the Editor tab. Like clicking the Dock icon, it now simply brings the window back the way you left it.</li>
+<li>The floating capture window's buttons now explain themselves. Every control had a label written for it, but none ever appeared, because the panel is designed never to take focus and the tooltips only showed while Sealshot was the active app — which, when you are working from the panel, it never is.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.7.6/Sealshot-0.7.6.zip" sparkle:edSignature="CuZKHvavwFF0rar5HeTNPvrHdJyBHXmrVbVgcC1Qs5t/WYJMv/rmqECcNtUL7R4G6AYNLuqHKEme3HkimoY8Dw==" length="69642744" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>0.7.5</title>
+      <pubDate>Wed, 12 Aug 2026 20:20:56 +0000</pubDate>
+      <sparkle:version>19</sparkle:version>
+      <sparkle:shortVersionString>0.7.5</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>New</h2>
+<ul>
+<li>A <b>floating capture window</b> lets you take one capture after another without the editor opening each time. It's a small panel that stays on top of your other apps, so it's there when you need it and out of the way when you don't — useful on a laptop, where macOS sometimes has no room for the Sealshot icon in the menu bar. Open it from the button at the top right of the editor window, or from <b>View › Floating Capture Window</b>.</li>
+</ul>
+<p>The single button shows the kind of capture you used last, so repeating it is one click; the rest — Save As, full screen, delayed, scrolling, Live Capture and both recording options — are one click deeper, under the <b>⋯</b> button. Your last few captures appear as thumbnails alongside a count, since the editor stays out of your way, and the ⤢ button brings the editor back whenever you want it.</p>
+<p>Drag the panel anywhere; guide lines show the edges it will snap to, and letting go near a corner parks it there. It dims while you're not using it and turns solid as soon as you point at it, remembers where it sits on each of your displays, and follows you to whichever screen your pointer is on. While Sealshot is locked the panel stays out of sight.</p>
+<h2>Performance</h2>
+<ul>
+<li>Selecting text on a capture is now instant even after quitting and reopening Sealshot. The text it finds is kept with the capture itself, so the reading only ever happens once — previously every relaunch started from scratch, which on an Intel Mac meant a wait of around ten seconds the first time you used <b>Live Text</b> or <b>Find in Image</b> on each capture. Captures with no text in them are remembered too, so those stop being re-read entirely. Editing a capture re-reads it, as it should.</li>
+</ul>
+<h2>Fixes</h2>
+<ul>
+<li><b>Find in Image</b> keeps up with your typing. Sealshot used to search the capture again on every single letter, so an eight-letter word meant eight searches — seven of them for half-words you never wanted results for. It now waits for a brief pause before searching, matching how the Library search already behaves. Clearing the field still empties the results at once, and pressing Return still jumps to the next match for exactly what you typed. Most noticeable on Intel Macs and on large captures.</li>
+<li>When you set an expiry date on a shared package, the calendar no longer offers dates that have already passed — picking one produced a package that arrived expired. An expiry now also lasts to the <b>end</b> of the day you pick, rather than to the time of day you happened to open the export panel, so "expires 20 August" means the whole of the 20th — and picking today gives the recipient the rest of today.</li>
+</ul>
+<h2>Privacy & Security</h2>
+<ul>
+<li>Fixed: on a library where Enhanced Security had been turned on once before and then turned off, turning it back on could stop halfway. Sealshot set up the new keys and reported the library as protected, but nothing was actually encrypted — every capture stayed readable on disk, and so did the plain search index holding text, titles and tags. A leftover key file from the earlier encrypted period was the cause; it is now discarded rather than treated as an error. If you have turned Enhanced Security on and the captures in your folder are still readable, turn it off and on again after updating.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.7.5/Sealshot-0.7.5.zip" sparkle:edSignature="OlPiC1b51wEOAy55MkZty8qalThu/HywRRBxxoFFiCMShxxuhm1OaLPCxyXe9LuJwaLYkWLMoujyO1WvLD8xCA==" length="69541695" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>0.7.4</title>
+      <pubDate>Tue, 11 Aug 2026 13:55:34 +0000</pubDate>
+      <sparkle:version>18</sparkle:version>
+      <sparkle:shortVersionString>0.7.4</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>Performance</h2>
+<ul>
+<li>Finishing a screen recording no longer bogs down an Intel Mac. Sealshot reads the text out of a handful of frames to describe the recording, and that read was running at the same effort it uses when you're sitting there waiting for it — on up to 24 frames, for a recording you'd already walked away from. It now uses the lighter setting reserved for background work, and yields to anything you're actually doing, so capturing or editing stays responsive while it finishes.</li>
+<li>Tagging a new capture is quicker. The checks for faces, documents and barcodes each re-prepared the image separately; they now share one pass. Most noticeable on Intel Macs, where that work has no dedicated hardware.</li>
+<li>Captures are ready much faster on Intel Macs. Reading the text out of a screenshot could take anywhere from 15 to 37 seconds on those machines, which held up the searchable text, keywords and title for every capture. Two things were behind it: the same screenshot could be read twice at once, and the pass that double-checks hard-to-read lines was doing far more work than it was worth. Text-heavy and blurry captures now finish two to three times quicker, and every line of text is still found — only the extra double-check of a few blurry lines is skipped.</li>
+<li>Switching to the text tool is far quicker on Intel Macs. Before showing selectable text, Sealshot checks whether the picture contains any text at all — and that check was doing a full, careful read of the whole image just to answer yes or no, which could take half a minute on its own. It now takes a fraction of a second.</li>
+<li>On Intel Macs, Sealshot no longer sharpens the image before reading text for selection. The sharpening quadrupled how much there was to read and cost far more time than the slightly clearer text was worth on those machines. Apple Silicon Macs still sharpen as before.</li>
+<li>Background text reading now gives way to whatever you're doing, instead of competing with it, so the text tool responds sooner after a capture.</li>
+<li>A new capture is no longer read twice over. Sealshot reads a screenshot once for search and keywords and again when you select text — the same picture, the same words, twice. The heavy part of that work is now done once and shared, so whichever comes second finishes much sooner. Selecting text still gets the most careful read; only the duplicated effort is gone.</li>
+<li>Selecting text, Find in Image, and Smart Redaction are unchanged: when you ask Sealshot for text yourself, it still does the most thorough read it can. Apple Silicon Macs see a smaller share of the same speed-up.</li>
+<li>The capture overlay opens more smoothly. The frozen picture of your screen behind the crosshair used to be prepared on the very first frame you saw, which made the overlay feel like it caught as it appeared.</li>
+<li>The capture crosshair and magnifier now follow your pointer directly. They were only being redrawn when the highlighted window changed, so on slower Macs they trailed slightly behind the cursor.</li>
+<li>Selecting text on a capture you have already opened is now instant. Sealshot remembers the text it found while the app is running, so switching between captures and coming back no longer re-reads the picture from scratch.</li>
+<li>Switching to a capture with Enhance Clarity applied no longer freezes the editor. A large enhanced image used to be prepared for display all at once before anything appeared — over a second on a big capture. The picture now shows immediately and sharpens a moment later, and flicking through captures no longer leaves discarded work running in the background.</li>
+<li>Scrolling a tall capture in the editor is much smoother. The light and dark chequerboard behind the picture was being redrawn across the whole canvas on every scroll, however little of it had actually moved — on a long screenshot that was most of a frame's worth of work each time. It now repaints only the strip that changed.</li>
+<li>Flicking through captures no longer makes the strip stutter. Opening a capture had to unpack its full-size picture before anything could be drawn, and that unpacking happened on the same thread the strip scrolls on — so each capture you passed through cost a visible pause. Sealshot now shows the capture's existing thumbnail for a moment and unpacks the full picture in the background. The longest pause when switching dropped from about 75 thousandths of a second to under 19.</li>
+</ul>
+<h2>Fixes</h2>
+<ul>
+<li>Captures look sharp at every zoom level, not just 100%. The canvas was always drawing at your screen's own resolution and then letting the graphics card stretch or shrink that picture to whatever zoom you'd chosen — so at 94% or 125% every pixel you saw came from a compromise. It now draws at the size you're actually viewing, which is why 100% always looked right and nothing else quite did. Most noticeable on non-Retina displays, where there was no spare resolution to hide it.</li>
+<li>Text looks much better when a capture is zoomed to anything other than a whole number. Sealshot deliberately keeps zoomed screenshots pixel-sharp rather than blurry, but it was doing that at every zoom level — and at in-between zooms like 125% or 156% that meant some pixels were doubled and others weren't, which chewed up letter shapes. Whole-number zooms (100%, 200%, 300%) stay pixel-sharp; everything in between now scales smoothly. Most noticeable on non-Retina displays.</li>
+<li>Fixed: zooming *up* to 100% left the picture slightly soft, while zooming down to 100% — or getting there with ⌘-scroll — looked right. Sealshot animates the zoom, and the animation could stop a whisker short of where it was headed, so a capture the editor reported as 100% was really being shown at 99% and resampled. Every zoom now lands exactly on the number shown, so 100% is once again a pixel-for-pixel view of your capture. Most noticeable on non-Retina displays.</li>
+<li>The tools are now greyed out while Sealshot is busy reading text, redacting or enhancing a capture — matching what extracting data already did. Before, the tools stayed clickable underneath the progress card for some of them.</li>
+<li>Fixed: cancelling text selection and then starting a redaction scan showed no progress at all. The cancelled read reported itself finished a moment later and dismissed the scan's progress card along with it.</li>
+<li>Fixed: the spinner next to a new capture's name could sit there for a long time on Intel Macs, waiting for something that was never going to happen. That spinner means "this name isn't final yet" — but on those Macs the name is already final the moment the capture is saved, and the spinner was really tracking the text-reading that happens in the background. It no longer appears when the name won't change, and everywhere else it now gives up after 8 seconds rather than spinning indefinitely.</li>
+<li>Selecting text in an image can now be cancelled. Reading the text out of a capture shows the same progress card as redacting and extracting data — with a Cancel button, and Esc works too — instead of a small badge you had to wait out. Cancelling puts you back on the pointer and restores the picture you were looking at.</li>
+<li>Switching to another capture now stops whatever Sealshot was working on for the old one. Enhancing clarity, redacting and extracting data used to keep running after you moved on, throwing the result away when they finished — and worse, the button stayed dead on the new capture until the abandoned work ended. Taking a brand-new screenshot mid-scan had the same problem.</li>
+<li>Fixed: the capture strip along the bottom of the editor could show only the capture you had open, as if every other capture had vanished. Your captures were never lost — Sealshot keeps a searchable list of them, and when that list had to be rebuilt from scratch (the first run after turning encryption off, for example) the strip showed nothing until the rebuild happened to finish and something else nudged it. Restarting Sealshot was the only way out. The strip now reads straight from your captures folder whenever that list is empty, and refreshes itself the moment the rebuild finishes.</li>
+<li>Fixed: the capture crosshair and magnifier were missing when the overlay first appeared, until you moved the mouse.</li>
+<li>The capture crosshair tracks the pointer more smoothly, especially on Intel Macs and on displays running a scaled resolution. The overlay also drops about half as many frames as it did, so the whole capture screen feels steadier while you pick what to grab.</li>
+<li>Point at empty desktop in the capture overlay and the <b>whole screen</b> highlights — click to capture the entire display. Previously nothing was highlighted there and clicking did nothing.</li>
+<li>Picking what to capture is steadier. Moving the pointer across the screen no longer lights up every window it passes over — a window highlights once you settle on it, so the overlay stops flickering on the way to what you wanted.</li>
+<li>Scrolling to widen or narrow the capture selection is smoother. One notch now moves one step instead of racing through everything under the pointer, and the box grows and shrinks in one continuous motion rather than lurching.</li>
+<li>Fixed: <b>Remove Background</b> sometimes left the editor showing the original image. The cutout had actually been made — the thumbnail in the strip showed it, and switching to another capture and back revealed it — but the canvas itself didn't refresh until something else happened to redraw it.</li>
+<li>You can drag captures out of the <b>Library</b> again — to Finder, to another app, or onto a collection in the sidebar. Dragging a Library tile or row had stopped doing anything at all, in both grid and list view; only the editor's recent strip still worked. Dragging one of several selected captures brings the whole selection, as it does in the strip.</li>
+<li>Dragging several captures out of the editor strip at once no longer prepares every file twice. Sealshot used to export each capture the moment you picked the group up, throw those files away, and export them again when you dropped — which also left a decrypted copy of each one behind in the system temp folder, even if you never dropped anything. The files are now written once, after the drop.</li>
+</ul>
+<h2>Live Capture</h2>
+<ul>
+<li>Right-click a window in a Live Capture and you can now **Export This Window…** straight from that window's menu, instead of selecting it first and going to the empty-canvas menu. It always saves the window you clicked.</li>
+<li>The empty-canvas version of the command is now called **Export Selected Window…**, so it's clear which window it writes.</li>
+</ul>
+<h2>Privacy & Security</h2>
+<ul>
+<li>Turning on Enhanced Security now clears the old plain search index straight away, instead of leaving it until the first encrypted save. If Sealshot was interrupted in between, that file could survive holding text read out of your captures — and a locked Sealshot would still search it. It is removed up front now, and a locked Sealshot refuses to read one even if it finds it.</li>
+<li>Fixed: with Enhanced Security locked and the trial expired, pressing a capture or record shortcut opened Settings over the lock screen. Locked now means locked — Settings stays shut until you unlock.</li>
+<li>Instead, Sealshot brings up the lock screen and explains that the trial has ended and new captures are paused. Unlock from there and Settings opens on the License page, so activating a license is two clicks from the shortcut that was blocked.</li>
+</ul>
+<h2>Welcome tour</h2>
+<ul>
+<li>Fixed: dragging the welcome tour card to a second monitor made it disappear. It was still there — macOS just stopped drawing it, and nothing would bring it back, including Show Now. It now moves between displays normally.</li>
+<li>The tour card also stays in front of the editor window wherever you put it, and no longer jumps about when you drag the editor between monitors.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.7.4/Sealshot-0.7.4.zip" sparkle:edSignature="xTRdIuV9dcO1DfMgdyXYHzW4bhRHdTZUwT19XorXVUSxAb2ZtLp79cI64eYYlYhnNeFtLjUbktv16ZjqjjowCg==" length="69438893" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>0.7.3</title>
+      <pubDate>Tue, 04 Aug 2026 00:34:57 +0000</pubDate>
+      <sparkle:version>17</sparkle:version>
+      <sparkle:shortVersionString>0.7.3</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>Privacy & Security</h2>
+<ul>
+<li>New setting: <b>Lock when Sealshot starts</b>, in Settings ▸ Privacy & Security (it appears once Enhanced Security is on, and starts out on). Leave it on and Sealshot asks for Touch ID every time it opens, as it always has. Turn it off and Sealshot opens ready to use — your captures are still encrypted on disk, but anyone using this Mac can open Sealshot and view them, so you're asked to confirm before it takes effect. Sealshot still re-locks when your Mac sleeps or the screen locks, and after the idle time you've set. Turning Enhanced Security off and on again puts the setting back on.</li>
+</ul>
+<h2>Fixes</h2>
+<ul>
+<li><b>Send Feedback…</b> no longer freezes Sealshot. The dialog now appears as a sheet on the front window, so Cancel and Compose both work; previously it opened as a separate window that could come up blank and titled "Untitled", leaving the whole app unresponsive with no way out but Force Quit.</li>
+<li>Clicking <b>Check Now</b> in Settings ▸ General no longer makes the <b>Automatically check for updates</b> switch appear to turn itself on. The setting was never actually changed — a manual check does not enable automatic ones, and it still doesn't — but the switch could redraw showing the opposite, which looked like Sealshot had quietly turned it back on. It now shows the real state, and re-reads it whenever you open Settings.</li>
+<li>The <b>Launch at login</b> switch in Settings no longer flips on its own when you click away to another app and come back. The setting itself was always correct — macOS was doing what you asked — but the switch could redraw showing the opposite, so it looked like Sealshot had changed it back. It now shows the real state, and re-checks it whenever you return to the app, so changes you make in System Settings ▸ General ▸ Login Items show up here too.</li>
+<li>Turning <b>Launch at login</b> off no longer fails silently after Sealshot has been updated in place. If macOS has lost track of the old registration, the switch now simply reads as off and turning it back on re-registers cleanly.</li>
+<li>If macOS is waiting for you to allow Sealshot in System Settings ▸ General ▸ Login Items, the Launch at login row now says so instead of showing the switch as off with no explanation.</li>
+<li>The welcome tour now stays in front of the editor window at startup instead of slipping behind it a moment after launch. It still steps aside normally when you switch to another app.</li>
+<li>The welcome tour listed the wrong key for scrolling capture — it showed ⌘⇧L, which now locks your library. It shows the real shortcut again, and every shortcut in the tour now reflects your own keys if you've changed them in Settings.</li>
+<li>The recent strip in the editor now says "No captures here yet." when it's empty, instead of showing an empty bar. With an Images or Videos filter on, it says "No images." / "No videos." so it's clear a filter is hiding things.</li>
+<li>Changing the save folder in Settings now actually switches libraries: the editor closes the open capture and returns to an empty canvas, and the recent strip and Library list the new location. They used to keep showing the old folder's captures. Your existing captures are not moved — they stay where they are.</li>
+<li>Opening an older license file can no longer shorten your update window. Sealshot now compares the file you open against the one already installed: a newer renewal replaces it, the same file says so, and an older one is refused. Opening a license for a different person asks first.</li>
+<li>Settings ▸ License now shows your license ID, with a button to copy it.</li>
+</ul>
+<h2>Licensing</h2>
+<ul>
+<li>Sealshot now tells you when your update window is about to close, in the month before it does, instead of letting you find out by installing a version your license doesn't cover. The app itself never expires — this only affects which new releases you can install. You can dismiss it.</li>
+<li>Settings ▸ License now has a <b>Renew</b> card in the month before your update window closes, and whenever you're running a version your license doesn't cover. It links straight to renewal with your license already identified, and to earlier downloads if you'd rather stay on the version you have. Volume licenses are renewed by invoice, so that card explains how instead of linking to the store.</li>
+<li>Once you have your renewal file, Settings ▸ License now shows you how to open it. The card with <b>Open License File…</b> used to disappear as soon as you were licensed — which was exactly when a renewal arrived — and any message about the file you opened disappeared with it. Those messages now always show.</li>
+<li>Settings ▸ License also shows your license type alongside the license ID, and shows both when your license doesn't cover this version — that's when you're most likely to be asked for them.</li>
+<li>Turning off <b>Automatically check for updates</b> now also stops Sealshot's background license-revocation check on launch — one network switch you can actually turn off. Revocations you've already received still apply.</li>
+<li><b>License files have a new format, and it is not backwards compatible.</b> A license issued from now on needs this version or later to open; a license issued before it will not open in this version. If you are holding a license file from an earlier build and it stops being accepted after updating, ask us for a fresh one at support@seal-shot.com and we will reissue it — your purchase and your update window are unchanged.</li>
+</ul>
+<h2>Welcome tour</h2>
+<ul>
+<li>The tour has caught up with the app: it now covers Live Capture, Collections and tags, Find in Image, Extract Data, and the single app-wide undo.</li>
+<li>Turning on Enhanced Security now comes with a reminder in the tour to save or print your Recovery Kit — without the recovery code, encrypted captures cannot be opened.</li>
+<li>The tour's first card explains the 14-day free trial and what keeps working after it ends.</li>
+<li>You can reopen the tour any time: Settings ▸ Startup ▸ Show welcome tour cards now has a <b>Show Now</b> button. It shows the tour straight away and leaves the startup setting alone.</li>
+<li>Intel Macs no longer see the "Smarter redaction" card. The enhanced on-device model it offers only runs on Apple silicon, so the card had nothing to offer — the tour is six cards there instead of seven.</li>
+</ul>
+<h2>Editor</h2>
+<ul>
+<li>You can now draw arrows, lines, shapes, pen strokes, text, and blur boxes past the edges of a screenshot. When you finish drawing, the canvas grows automatically to make room, so annotations that point off the image (or sit beside it) stay exactly where you drew them instead of being cut off at the edge. Undo still reverts the drawing and the canvas growth in one step.</li>
+<li>An arrow with an outline now gets a clean, even outline around the whole arrow — shaft <b>and</b> arrowhead. Previously the arrowhead's outline could balloon into a thick, oversized triangle because it was scaled with the outline width instead of offset around the head.</li>
+<li>The Arrow and Line tools now need a small deliberate drag before they draw — a tiny, accidental mouse twitch no longer leaves a stray arrow or line behind.</li>
+<li>The shape and arrow tool chooser (the dropdown from the toolbar pills) no longer cuts off tool names — <b>Rectangle</b>, <b>Ellipse</b>, <b>Line Arrow</b>, and <b>Free Arrow</b> now display in full instead of "Rectangl…" / "Line Arro…".</li>
+</ul>
+<h2>Capture</h2>
+<ul>
+<li>The scrolling-capture permission checklist now has a <b>Done</b> button instead of <b>Start Capture</b>. After you grant the permissions, Done simply closes the checklist — Sealshot no longer begins scrolling-capture on its own the moment you've finished granting access. Start the capture yourself whenever you're ready.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.7.3/Sealshot-0.7.3.zip" sparkle:edSignature="uBKUO9teoj9Mvx1gpPl4ezEgBeZBJAHn7QmtmKadW/0XV1/HPNq8PLimy/+TdTE4l5/A2syikb8Uos/hqR78Ag==" length="69359899" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>0.7.2</title>
+      <pubDate>Wed, 22 Jul 2026 13:00:06 +0000</pubDate>
+      <sparkle:version>14</sparkle:version>
+      <sparkle:shortVersionString>0.7.2</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>Fixes</h2>
+<ul>
+<li>Dragging a single capture from the recent strip to Finder now drops a real, full-resolution image file. It previously created a tiny broken alias instead of the actual picture.</li>
+<li>The empty area around the image in the editor now behaves like empty canvas: clicking it deselects, and you can start a selection box out there and drag across the image. Previously clicks out there did nothing at all.</li>
+<li>Dragging a selection box now selects only the objects it fully encloses, instead of everything it touches on the way past.</li>
+<li>The Editor/Library/Settings switcher no longer offers an Icon and Text / Icon Only / Text Only menu on right-click. Picking one of those could leave a stray "View" label sitting under the switcher. (macOS 15 and later.)</li>
+</ul>
+<h2>Licensing</h2>
+<ul>
+<li>Direct edition: installing a Sealshot version released after your license's update window now shows a renewal banner and pauses new captures and recordings until you renew or switch back to a covered version. Everything already captured stays fully viewable, editable, and exportable.</li>
+</ul>
+<h2>Library</h2>
+<ul>
+<li>Right-click <b>All Files</b> in the Library sidebar to <b>Export All Files…</b> — bundles your whole library into one package you can AirDrop to another Mac and import (optionally passphrase-protected). Works like exporting a collection, just for everything.</li>
+<li>Exporting a package now shows how many items are done (e.g. "Packaging 5 of 10…") instead of a time-left estimate.</li>
+</ul>
+<h2>Security</h2>
+<ul>
+<li>Your recovery key screen now has "Save Kit…" and "Print…" buttons, so you can keep a PDF copy of your recovery code — with instructions — on paper or in your own backup, not just copy it to the clipboard.</li>
+<li>Every so often, Sealshot will ask you to confirm you still have your recovery code (about once every 3 months). This never happens while your library is locked or more than once per launch, and you can always say "Remind Me Later" or generate a fresh code on the spot.</li>
+<li>The lock screen now has an "I can't unlock…" option for when you've lost both Touch ID access and your recovery code. It explains why Sealshot can't bypass encryption for you, then — after you type RESET to confirm — moves your encrypted captures to a Locked Archive and turns encryption off so you can keep using the app. Nothing is deleted, and archived captures can still be restored later if you find your recovery code.</li>
+<li>Captures moved to your Locked Archive now show up as their own section in the Library, so you can see what's there instead of it being hidden on disk. They're read-only — shown dimmed with a lock badge — since Sealshot can't decrypt them without your recovery code, but you can still select them and reveal them in Finder.</li>
+<li>Found your recovery code again? You can now restore the Locked Archive: a Restore… button in the Library's Locked Archive section (and in Settings → Privacy & Security) asks for the code and brings those captures back into your library, re-enabling encryption with the recovered key. If you went through more than one reset, each round's captures come back with that round's own code — items belonging to a different code stay safely in the archive, and nothing is ever deleted — even if you'd already set up encryption again in the meantime. The restore screen also warns you if some internal keys couldn't be brought back, instead of failing silently. If restoring an older code needs to set aside your current encryption setup to make room, the restore screen now tells you so, and reminds you to bring your current setup back with its own recovery code.</li>
+<li>Some Locked Archive items can never come back through Restore… — ones set aside when you turned encryption off, rather than from a reset — and Sealshot's messaging now says so plainly instead of implying a code will restore them: the Library banner drops the Restore… button when nothing in the archive is actually restorable, and the restore screen's wording no longer promises a code will work for items left behind.</li>
+<li>Successfully entering your recovery code — whether to restore a Locked Archive or unlock on a new Mac — now counts as verifying it, the same as using the periodic "Verify Your Recovery Code" prompt, so you won't be asked again sooner than necessary.</li>
+<li>Fixed the recovery-verify nudge's "Generate New…" button sometimes not opening Settings → Privacy & Security when Settings was already open.</li>
+</ul>
+<h2>Other</h2>
+<ul>
+<li>Live Captures now get keywords and a summary that lists each captured window with a one-line description. Scenes taken before this update pick theirs up the next time you open them.</li>
+<li>Sealshot now has a 14-day free trial. After it, your existing captures stay fully viewable, editable, and exportable — a license is needed only for new captures and recordings. Activate by opening your license file (or dropping it) in Settings → License. A banner shows when your trial is in its final week.</li>
+<li>The Library and Settings tabs use a clean solid backdrop instead of the hex-pattern background.</li>
+<li>Sealshot now tells you when capture summaries need Apple Intelligence turned on, instead of quietly hiding them — and says plainly when your Mac can't run them, so you know nothing is broken.</li>
+<li>Turning Apple Intelligence on in System Settings while a capture is open now resumes its summary and keywords automatically as soon as you switch back to Sealshot — no more closing and reopening the capture to make it generate. Settings → On-Device AI also updates right away instead of showing stale status.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.7.2/Sealshot-0.7.2.zip" sparkle:edSignature="KrHgZMzbthCfGeNDxZdSovORvrraRaPNXdtXcUuo/SKpveJxC+oaxWPQJONNL5mx32JyLHzIrPIKYQBFmaEoBw==" length="69273350" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>0.7.1</title>
+      <pubDate>Fri, 17 Jul 2026 02:27:15 +0000</pubDate>
+      <sparkle:version>13</sparkle:version>
+      <sparkle:shortVersionString>0.7.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>Recording</h2>
+<ul>
+<li>The recording HUD now shows a Recording/Paused label beside the status icon.</li>
+<li>The record prompt now appears over full-screen apps, on the display being recorded.</li>
+<li>Each recording shortcut stops only its own recording mode.</li>
+<li>System and microphone audio are recorded at native 48 kHz for cleaner sound.</li>
+<li>A finished recording is selected automatically in the recent-captures strip.</li>
+</ul>
+<h2>Editor</h2>
+<ul>
+<li>One app-wide undo timeline: images, videos, metadata edits, and selection are all undoable steps, and each undo names what it undid.</li>
+<li>New Free Arrow tool — draw an arrow along any path, next to the straight Line Arrow.</li>
+<li>Pen, line, arrow, shape, step, and text annotations can now have an outline (casing) color with its own width control.</li>
+<li>Text tool overhaul: weight slider, per-tool color and opacity memory, visible text-box frame with resize dots, and typography remembered across launches.</li>
+<li>Captures render and export color-faithful — no more lightened text.</li>
+<li>Dragging a focused capture to Finder exports just the focus area.</li>
+<li>Duplicate a whole capture from the editor, the strip, or the Library.</li>
+<li>Extracted Data results appear in a single consolidated view; exports default to the image's name, and cancelling an extraction takes effect immediately.</li>
+<li>Structured Data Extraction uses the enhanced on-device model when it's downloaded.</li>
+<li>The toolbar and tabs freeze during blocking AI actions; navigating away cancels the action.</li>
+<li>Fit Width / Fit Height no longer leave a stray scrollbar.</li>
+<li>A remembered video reopens with its player panel and controls in place.</li>
+</ul>
+<h2>Library</h2>
+<ul>
+<li>Resize the Quick Look preview with the −/+ buttons, and grid tiles with ⌘+scroll.</li>
+<li>Play a video straight from its play badge in the strip; clicking the thumbnail opens it paused.</li>
+<li>Preview is available from the context menu, and the video action "Play" is now "Open".</li>
+<li>Drag multiple captures to Finder with a progress bar and Cancel.</li>
+<li>Empty Trash button clears the Trash in one click.</li>
+<li>Multi-select stays fast in large libraries.</li>
+</ul>
+<h2>Security</h2>
+<ul>
+<li>Idle auto-lock now follows system-wide idle time, not just activity inside the app.</li>
+<li>Menus and keyboard shortcuts are gated while the library is locked.</li>
+<li>Turning encryption on or off shows reliable progress and no longer damages video packages.</li>
+<li>Fixed a case where an interrupted recovery-key ceremony left the tab switcher disabled.</li>
+</ul>
+<h2>Capture & OCR</h2>
+<ul>
+<li>A cancelled capture no longer raises the editor over the app you were using.</li>
+<li>OCR now recognizes non-Latin scripts, with automatic language detection.</li>
+<li>Smart Redaction catches more: 2FA backup-code grids, role names, ticket IDs, masked card numbers, and street addresses.</li>
+</ul>
+<h2>Other</h2>
+<ul>
+<li>Deleted items are kept 7 days by default before being purged, and the retention setting now applies reliably to every trashed item.</li>
+<li>Your own tags are preserved when Smart Keywords are regenerated.</li>
+<li>Update dialogs use a cleaner centered-icon design matching the About panel.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.7.1/Sealshot-0.7.1.zip" sparkle:edSignature="3tfEn4vOZ3Vwxll9IfXvSP9OQfA8iFKdcTO8IewkGh0Yfh/KgtTEJ3C0iws6dmk3dKQsfPhN38UOXdazXhexAg==" length="68862159" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>0.7.0</title>
+      <pubDate>Thu, 09 Jul 2026 02:54:36 +0000</pubDate>
+      <sparkle:version>12</sparkle:version>
+      <sparkle:shortVersionString>0.7.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.7.0/Sealshot-0.7.0.zip" sparkle:edSignature="z4pDM9ooQgmWWmGINa4hANgHRefR6182YFXmVrU6ocvbkZP9ViuYVpM9HXgHZ1hK0YJNkg2Rg6d5qo9VuzWXBA==" length="68267507" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>0.6.0</title>
+      <pubDate>Thu, 18 Jun 2026 23:45:54 GMT</pubDate>
+      <sparkle:version>11</sparkle:version>
+      <sparkle:shortVersionString>0.6.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.6.0/Sealshot-0.6.0.zip" sparkle:edSignature="R68XjCETHg68YXT3Nv3bC08jkz7vtXdq0nLXcwq8tsE+lLluM0YflGbbAuxmgMxnsBXAaB9pUw6QRwjJvLZQDg==" length="9531187" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>0.5.1</title>
+      <pubDate>Sun, 14 Jun 2026 03:53:24 +0000</pubDate>
+      <sparkle:version>10</sparkle:version>
+      <sparkle:shortVersionString>0.5.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.5.1/Sealshot-0.5.1.zip" sparkle:edSignature="ZFb+rk8vR6LYyIPymSIHLRkLghqJZOh0/qHgfjLZHJciBBdBiqNo+gp9B4JfzkrxdkhfyWRLJVA8+lSyj+rJAw==" length="8192990" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>0.5.0</title>
+      <pubDate>Sat, 13 Jun 2026 18:03:05 +0000</pubDate>
+      <sparkle:version>9</sparkle:version>
+      <sparkle:shortVersionString>0.5.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.5.0/Sealshot-0.5.0.zip" sparkle:edSignature="1H2d1AeZK6/BfaR9cbg/KGRLR0a3VbHKBJr8W14Myal1EanunTheVDsK32jKSbHLiSvsKduX99x2F/qF6jVsBQ==" length="7996572" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>0.4.0</title>
+      <pubDate>Thu, 11 Jun 2026 17:23:28 +0000</pubDate>
+      <sparkle:version>6</sparkle:version>
+      <sparkle:shortVersionString>0.4.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/raydeng83/Sealshot-Release/releases/download/v0.4.0/Sealshot-0.4.0.zip" sparkle:edSignature="ny3+fK+eiAs25SKyB56nOzW/MyxQ2aBMgvBSRSOQHRm0LBN7VzhIypg+/lbt7z9UHIeW2te40QjLWJ5SbLziCw==" length="7715193" type="application/octet-stream"/>
+    </item>
+  </channel>
+</rss>

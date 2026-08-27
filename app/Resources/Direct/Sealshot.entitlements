@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Required for microphone capture under Hardened Runtime. Without it the
+         notarized Direct build can't be granted mic access, so "Capture
+         microphone" recordings are silent for download users. (The MAS build
+         carries the same key alongside its sandbox entitlements.) -->
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
+</dict>
+</plist>

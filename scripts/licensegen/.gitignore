@@ -1,0 +1,4 @@
+.build/
+# `licensegen issue` writes a signed license file into the current directory
+# as a side effect (including during parity-check.sh runs). Never commit one.
+*.sealshotlicense

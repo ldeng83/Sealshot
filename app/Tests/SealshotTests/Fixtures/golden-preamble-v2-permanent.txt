@@ -1,0 +1,17 @@
+Sealshot License
+================
+Licensed to:      Jane Doe
+Email:            jane@example.com
+License ID:       550E8400-E29B-41D4-A716-446655440000
+License type:     Individual
+License issued:   2026-08-26
+App access:       Perpetual
+Updates:          All future versions
+Users:            1
+Macs per user:    3
+
+This license does not expire. It permits use of every Sealshot
+release, including all future versions.
+
+Keep this file exactly as received. The information above is
+cryptographically signed; modifying it invalidates the license.
