@@ -93,22 +93,22 @@ final class RecentStripView: NSView {
     /// capture. `nil` = nothing selected.
     var selectedURL: URL? {
         didSet {
-            // Session working set: an item opened from outside the recent
-            // window stays pinned for the whole session (not just while
-            // open) — the user returns to it via the strip like any other
-            // tile. Dead/absorbed pins are cleaned in applyCurrent.
-            // Dedupe by the standardized PATH: the open URL arrives without a
-            // trailing slash while the indexed listing URL has one (a `.seal`
-            // package is a directory URL) — and `standardizedFileURL` keeps that
-            // slash, so a plain compare leaves the pin un-deduped and the capture
-            // shows twice (e.g. after an undo-restore reopens it). `.path` drops
-            // the slash so both sides match.
+            // Opening a capture from ELSEWHERE (the Library, a cross-item undo
+            // jump) makes it recent: the index gets an activity stamp and the
+            // strip lists it in that order, exactly like any other capture. A
+            // click on a tile in THIS strip stamps nothing — the item is already
+            // listed, and re-stamping would shuffle tiles out from under the
+            // pointer. This replaces the old front-pinned "session working set",
+            // which parked an opened item at slot 0 for the rest of the session
+            // and so pushed every screenshot taken afterwards behind it.
             if let url = selectedURL,
                // Scratch captures are open-but-not-in-the-Library, and the
-               // strip is a Library surface: no pin until they are kept.
+               // strip is a Library surface: nothing to stamp until they are kept.
                !ScratchCapture.isScratch(url),
-               !pinnedURLs.contains(where: { $0.standardizedFileURL.path == url.standardizedFileURL.path }) {
-                pinnedURLs.append(url)
+               mode == .recent,
+               !selectionFromStripClick,
+               url.deletingLastPathComponent().lastPathComponent != SealDeleter.deletedSubfolderName {
+                markActivityAndRefresh(url)
             }
             // A programmatic open (launch / cross-item undo) reveals the item at
             // the strip's leading edge. Launch fires several async refreshes that
@@ -122,10 +122,16 @@ final class RecentStripView: NSView {
         }
     }
 
-    /// Session-scoped working set of opened items that live outside the
-    /// recent listing (newest pin first in the strip). Pruned when a pin's
-    /// file vanishes or the item enters the listing naturally.
-    private var pinnedURLs: [URL] = []
+    /// Stamp `url` as just-used in the library index, then reload so it takes
+    /// its place in the listing. The stamp is index-only (the capture file is
+    /// never written for an open), and the reload is the ordinary refresh — the
+    /// item arrives as a normal tile, sorted by that stamp.
+    private func markActivityAndRefresh(_ url: URL) {
+        Task { [weak self] in
+            await LibraryIndexStore.shared.markActivity(url: url)
+            self?.refresh()
+        }
+    }
 
     /// True while a selection change originates from a click on THIS strip:
     /// the tile is already under the pointer, so the leading-align reveal
@@ -480,32 +486,9 @@ final class RecentStripView: NSView {
 
     private func applyCurrent() {
         guard let stack else { return }
-        var items = allItems.filter { mediaFilter.includes(isVideo: $0.isVideo) }
-        // Session working set: every item opened from outside the recent
-        // window keeps a tile at the strip's front for the whole session —
-        // the strip is the editor's "where am I" anchor, and cross-item undo
-        // jumps and return visits need a landing spot. Front placement reads
-        // as the working slots; the rest of the listing keeps its
-        // chronology. Pins self-prune when their file vanishes or the item
-        // enters the listing naturally; deleted-folder items belong to the
-        // deleted strip and are never pinned here.
-        if mode == .recent {
-            pinnedURLs.removeAll { url in
-                items.contains(where: { $0.url.standardizedFileURL.path == url.standardizedFileURL.path })
-                    || url.deletingLastPathComponent().lastPathComponent == "Deleted"
-                    || ScratchCapture.isScratch(url)
-                    || !FileManager.default.fileExists(atPath: url.path)
-            }
-            for url in pinnedURLs.reversed() {   // newest pin ends up first
-                let item = Self.pinnedItem(for: url)
-                // Pins obey the media filter like every other tile — an open
-                // IMAGE must not surface under the Videos filter. The pin
-                // itself survives (hidden, not dropped), so flipping the
-                // filter back reveals it again.
-                guard mediaFilter.includes(isVideo: item.isVideo) else { continue }
-                items.insert(item, at: 0)
-            }
-        }
+        // No special placement: every tile — including a capture just opened from
+        // the Library — comes from the listing, in the listing's own order.
+        let items = allItems.filter { mediaFilter.includes(isVideo: $0.isVideo) }
         // Canonical display order (newest-first, media-filtered) — the source of
         // truth for `orderedURLs`. Kept separate from `stack.arrangedSubviews`,
         // whose order can transiently scramble before a refresh settles.
@@ -559,21 +542,6 @@ final class RecentStripView: NSView {
         // Tiles for recently delete/restored URLs may have just (re)appeared
         // (e.g. on a tab switch) — re-apply the outline.
         refreshActivityMarks()
-    }
-
-    /// A minimal StripItem for an open capture outside the indexed window.
-    /// Video classification mirrors the editor's (manifest probe for .seal);
-    /// duration stays nil (no badge) until the index lists the item properly.
-    private static func pinnedItem(for url: URL) -> StripItem {
-        let ext = url.pathExtension.lowercased()
-        let isVideo = ["mov", "mp4", "sealrec"].contains(ext)
-            || (ext == "seal" && (try? SealMetadataStore.readManifest(at: url))?.video != nil)
-        let created = (try? FileManager.default.attributesOfItem(atPath: url.path)[.creationDate]) as? Date
-        return StripItem(url: url,
-                         captureDate: created ?? .distantPast,
-                         displayName: CaptureDisplayName.resolve(for: url),
-                         isVideo: isVideo,
-                         isEncrypted: ext == "sealrec")
     }
 
     /// Reveal the tile as the FIRST item in the viewport (leading-aligned) —

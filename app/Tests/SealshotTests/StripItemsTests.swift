@@ -211,4 +211,141 @@ final class StripItemsTests: XCTestCase {
         XCTAssertEqual(items?.map(\.url), listed,
                        "StripItem URLs must compare equal to directory-listing URLs")
     }
+
+    // MARK: Recency — an opened capture joins the strip like any other
+
+    /// A minimal `.seal` carrying a chosen capture date, so a test can build a
+    /// library whose oldest items fall outside the strip's day window.
+    private func makeDatedSeal(in dir: URL, named name: String, created: Date) throws -> URL {
+        let url = dir.appendingPathComponent(name)
+        let stamp = ISO8601DateFormatter().string(from: created)
+        let manifest = SealManifest(
+            version: SealManifest.currentVersion,
+            createdISO8601: stamp, modifiedISO8601: stamp,
+            sourceSize: .init(width: 4, height: 4), sourceApp: nil,
+            showingEnhanced: false, metadata: nil)
+        try SealContainer.write(entries: [("manifest.json", try manifest.encodeJSON())], to: url)
+        return url
+    }
+
+    /// Nine capture days so the 7-day window genuinely excludes the oldest —
+    /// the shape of the reported library, where an Aug 22 capture sat 11 days
+    /// back. Returns the out-of-window URL.
+    private func makeLibraryWithAnOldCapture(in shots: URL, now: Date) throws -> URL {
+        for day in 1...8 {
+            _ = try makeDatedSeal(in: shots, named: "day\(day).seal",
+                                  created: now.addingTimeInterval(-Double(day) * 86_400))
+        }
+        return try makeDatedSeal(in: shots, named: "old.seal",
+                                 created: now.addingTimeInterval(-30 * 86_400))
+    }
+
+    /// The reported bug: an old capture opened from the Library used to be
+    /// PINNED to slot 0 for the whole session, so every screenshot taken
+    /// afterwards was pushed behind it. It must instead enter the listing on its
+    /// own recency — present, and first only until something newer arrives.
+    func test_stripItems_openedOldCapture_joinsTheListing() async throws {
+        let dir = tempDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let shots = dir.appendingPathComponent("shots")
+        try FileManager.default.createDirectory(at: shots, withIntermediateDirectories: true)
+        let now = Date()
+        let old = try makeLibraryWithAnOldCapture(in: shots, now: now)
+        let store = makeStore(dir)
+
+        let beforeItems = await store.stripItems(
+            folder: shots, recordingsFolder: nil, coveringDays: 7, now: now)
+        let before = try XCTUnwrap(beforeItems)
+        XCTAssertFalse(before.contains { $0.url.lastPathComponent == "old.seal" },
+                       "30 days back is outside the 7-day window")
+
+        // A second back, not exactly `now` — see `test_markActivity_survivesReconcile`
+        // for why stamping at the query instant is unstable.
+        let openedAt = now.addingTimeInterval(-1)
+        await store.markActivity(url: old, at: openedAt)
+
+        let afterItems = await store.stripItems(
+            folder: shots, recordingsFolder: nil, coveringDays: 7, now: now)
+        let after = try XCTUnwrap(afterItems)
+        let item = try XCTUnwrap(after.first { $0.url.lastPathComponent == "old.seal" },
+                                 "opening it must bring it into the strip")
+        XCTAssertEqual(item.captureDate.timeIntervalSince1970,
+                       openedAt.timeIntervalSince1970, accuracy: 0.5,
+                       "it is ordered by when it was opened")
+        XCTAssertEqual(after.first?.url.lastPathComponent, "old.seal",
+                       "nothing newer exists yet, so it leads")
+    }
+
+    /// The other half of the same complaint: a screenshot taken AFTER opening an
+    /// old capture must land in front of it. Under pinning it landed behind.
+    func test_stripItems_captureTakenAfterAnOpen_sortsAhead() async throws {
+        let dir = tempDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let shots = dir.appendingPathComponent("shots")
+        try FileManager.default.createDirectory(at: shots, withIntermediateDirectories: true)
+        let now = Date()
+        let old = try makeLibraryWithAnOldCapture(in: shots, now: now)
+        let store = makeStore(dir)
+
+        // Opened an hour ago, then a fresh capture right now.
+        await store.markActivity(url: old, at: now.addingTimeInterval(-3600))
+        _ = try makeDatedSeal(in: shots, named: "fresh.seal", created: now)
+
+        let listed = await store.stripItems(
+            folder: shots, recordingsFolder: nil, coveringDays: 7, now: now)
+        let items = try XCTUnwrap(listed)
+        let freshIndex = try XCTUnwrap(items.firstIndex { $0.url.lastPathComponent == "fresh.seal" })
+        let oldIndex = try XCTUnwrap(items.firstIndex { $0.url == old },
+                                     "the opened capture stays listed")
+        XCTAssertLessThan(freshIndex, oldIndex,
+                          "a capture taken after the open must sort ahead of it — "
+                          + "the pinned tile used to force the opposite")
+    }
+
+    /// The stamp lives in the index and the reconcile upsert does not list its
+    /// column — so re-indexing (every strip refresh reconciles) must not wipe it.
+    func test_markActivity_survivesReconcile() async throws {
+        let dir = tempDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let shots = dir.appendingPathComponent("shots")
+        try FileManager.default.createDirectory(at: shots, withIntermediateDirectories: true)
+        let now = Date()
+        let old = try makeLibraryWithAnOldCapture(in: shots, now: now)
+        let store = makeStore(dir)
+
+        // A second earlier, not exactly `now`: a real open is always followed by a
+        // refresh that samples its own `Date()`. Stamping at the very instant
+        // later passed as `now` is not merely unrealistic, it is unstable —
+        // `Date` counts from 2001, so a value stored and re-read through
+        // `timeIntervalSince1970` can come back 1 ULP LARGER than the original,
+        // and `StripItem.merged` drops anything dated after `now` as clock skew.
+        // That dropped the capture from the listing outright, at random.
+        await store.markActivity(url: old, at: now.addingTimeInterval(-1))
+        // A wide window so this test is about the STAMP surviving, not about
+        // window membership — each stripItems call reconciles the folder first.
+        _ = await store.stripItems(folder: shots, recordingsFolder: nil, coveringDays: 30, now: now)
+        let listed = await store.stripItems(
+            folder: shots, recordingsFolder: nil, coveringDays: 30, now: now)
+        let items = try XCTUnwrap(listed)
+        let item = try XCTUnwrap(items.first { $0.url.lastPathComponent == "old.seal" })
+        XCTAssertEqual(item.captureDate.timeIntervalSince1970,
+                       now.addingTimeInterval(-1).timeIntervalSince1970, accuracy: 0.5,
+                       "two reconciles later the strip must still order this by the stamp, "
+                       + "not fall back to its 30-day-old capture date")
+    }
+
+    /// Opening must never write the capture itself — a view that dirties a
+    /// package makes backups re-copy it and turns "Modified" into "last opened".
+    func test_markActivity_doesNotTouchTheFile() async throws {
+        let dir = tempDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let shots = dir.appendingPathComponent("shots")
+        try FileManager.default.createDirectory(at: shots, withIntermediateDirectories: true)
+        let now = Date()
+        let old = try makeLibraryWithAnOldCapture(in: shots, now: now)
+        let store = makeStore(dir)
+        _ = await store.stripItems(folder: shots, recordingsFolder: nil, coveringDays: 7, now: now)
+        let before = try FileManager.default.attributesOfItem(atPath: old.path)[.modificationDate] as? Date
+
+        await store.markActivity(url: old, at: now)
+
+        let after = try FileManager.default.attributesOfItem(atPath: old.path)[.modificationDate] as? Date
+        XCTAssertEqual(before, after, "the package's mtime must be untouched by an open")
+    }
 }

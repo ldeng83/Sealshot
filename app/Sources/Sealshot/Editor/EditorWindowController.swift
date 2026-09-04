@@ -1436,11 +1436,7 @@ final class EditorWindowController: NSWindowController {
         // which makes Enhance Clarity on the newly-opened capture silently do
         // nothing. Cancel it, then clear the "Enhancing…" overlay so it doesn't
         // linger over the new file.
-        //
-        // Unconditional: `endLiveTextEnhanceSession` below also fires this hook,
-        // but only for a LIVE TEXT enhance session — a run the user started
-        // themselves has no session and used to slip through. Cancelling a nil
-        // task is a no-op, so the overlap is harmless.
+        // Cancelling a nil task is a no-op, so this is unconditional.
         onEnhanceCancel?()
         hideEnhancingOverlay()
         // Same reasoning for the other long canvas work. These used to cancel
@@ -1501,12 +1497,6 @@ final class EditorWindowController: NSWindowController {
         // Carry the per-tool creation settings (widths/colors/blur/etc.) so
         // switching images keeps the user's chosen styling.
         let previousState = state
-        // End any Live Text enhance session on the outgoing state (restores
-        // its logical enhanced visibility, cancels an in-flight generation)
-        // and reset the transition tracker so a carried-over Live Text tool
-        // begins a fresh session on the NEW state via observeSelectedTool.
-        if let previousState { endLiveTextEnhanceSession(on: previousState) }
-        liveTextEnhanceLastTool = .select
         self.state = newState
         self.state?.bottomTab = preservedTab
         self.currentTab = preservedTab
@@ -2276,7 +2266,6 @@ final class EditorWindowController: NSWindowController {
     private func observeSelectedTool() {
         guard let state = state else { return }
         syncToolbarHighlights()
-        handleLiveTextEnhanceTransition()
         withObservationTracking {
             _ = state.selectedTool
         } onChange: { [weak self] in
@@ -2284,108 +2273,6 @@ final class EditorWindowController: NSWindowController {
                 self?.observeSelectedTool()
             }
         }
-    }
-
-    /// Tool last seen by the Live Text enhance-session handler, so entering /
-    /// leaving `.textSelect` is detected across programmatic switches too.
-    private var liveTextEnhanceLastTool: EditorTool = .select
-
-    /// Live Text OCRs `displayBase`, and super-resolved glyphs read far
-    /// better than raw small fonts — so picking the tool temporarily shows
-    /// the enhanced base (generating it via the normal Enhance pipeline +
-    /// overlay when the capture has none), and leaving the tool restores the
-    /// user's prior original/enhanced choice. Saves are unaffected mid-
-    /// session (`persistedShowingEnhanced`).
-    private func handleLiveTextEnhanceTransition() {
-        guard let state else { return }
-        let tool = state.selectedTool
-        defer { liveTextEnhanceLastTool = tool }
-        guard tool != liveTextEnhanceLastTool else { return }
-        if tool == .textSelect {
-            // Video mode has no image base to enhance.
-            guard state.playingVideoURL == nil else { return }
-            let action = state.beginLiveTextEnhanceSession()
-            if state.showsImageTextSearchPanel {
-                switch action {
-                case .none:
-                    primeImageTextSearchScanStage(state)
-                case .showedExisting:
-                    state.imageTextSearchScanStage = .recognizingCurrentBase
-                case .needsGeneration:
-                    state.imageTextSearchScanStage = .waitingForEnhancementDecision
-                }
-            }
-            if action == .needsGeneration, OCRPerformanceClass.current == .cpuOnly {
-                // Without a Neural Engine, super-resolution is a net loss: it
-                // doubles each side, so the OCR that follows runs over 4x the
-                // pixels and lands in a much higher tile count — measured in
-                // the field at 15 tiles / ~20s for the enhanced base versus 6
-                // tiles for the raw one. Vision's per-request floor is ~120ms
-                // here (~14ms on an M4), so that trade only pays where the
-                // recognition itself is cheap. Read the raw base instead —
-                // exactly the path taken when the probe finds no text.
-                if state.showsImageTextSearchPanel {
-                    state.imageTextSearchScanStage = .recognizingCurrentBase
-                }
-            } else if action == .needsGeneration {
-                // Only pay for super-resolution when the image actually has
-                // text. Probe the raw base first; enhance only if text is found.
-                // If none, leave the raw base — the overlay OCR reports no text.
-                //
-                // Hold the canvas off the raw base for the length of the probe
-                // and any enhancement that follows. Set BEFORE the probe: the
-                // canvas reacts to the tool change on this same turn, so a flag
-                // set after the await would arrive too late to stop it.
-                state.liveTextAwaitingEnhancement = true
-                let raw = state.sourceImage
-                Task { @MainActor [weak self] in
-                    let hasText = await Self.rawImageHasText(raw)
-                    guard let self, self.state === state,
-                          state.selectedTool == .textSelect,
-                          state.liveTextEnhanceRestore != nil else {
-                        // Tool left, capture swapped, or the session ended
-                        // under us — release the canvas, or Live Text stays
-                        // wedged for this capture.
-                        state.liveTextAwaitingEnhancement = false
-                        return
-                    }
-                    if hasText {
-                        if state.showsImageTextSearchPanel {
-                            state.imageTextSearchScanStage = .waitingForEnhancedOCR
-                        }
-                        // Stays set — `runEnhanceApply` clears it when the
-                        // enhanced base lands (or the attempt fails).
-                        self.onEnhanceApply?()
-                    } else {
-                        // No text: nothing will replace this base, so the
-                        // canvas reads it now.
-                        state.liveTextAwaitingEnhancement = false
-                        if state.showsImageTextSearchPanel {
-                            state.imageTextSearchScanStage = .recognizingCurrentBase
-                        }
-                    }
-                }
-            }
-        } else if liveTextEnhanceLastTool == .textSelect {
-            if state.endLiveTextEnhanceSession() { onEnhanceCancel?() }
-        }
-    }
-
-    /// Quick text-presence probe on the raw image. Used to skip the expensive
-    /// Live Text auto-enhance when there is no text to read.
-    ///
-    /// This used to run the FULL recognition pipeline to produce a boolean —
-    /// measured at ~28s on a Mac without a Neural Engine, i.e. the probe cost
-    /// far more than the enhancement it exists to avoid. `containsText` is a
-    /// single `.fast` pass (~60ms) with the same presence sensitivity.
-    private static func rawImageHasText(_ image: CGImage) async -> Bool {
-        await TextRecognizer().containsText(image)
-    }
-
-    /// End an active Live Text enhance session (used by `swap` for the
-    /// outgoing state, whose observation is about to be torn down).
-    private func endLiveTextEnhanceSession(on state: EditorState) {
-        if state.endLiveTextEnhanceSession() { onEnhanceCancel?() }
     }
 
     /// Reflect the app-global timeline's undo/redo availability on the toolbar.
@@ -3665,8 +3552,8 @@ final class EditorWindowController: NSWindowController {
     }
 
     /// Enter/focus Find in Image. Search owns the visible mode while arming Live
-    /// Text underneath, which runs its raw probe, optional auto-enhance, and
-    /// final OCR. The toolbar still highlights Search alone.
+    /// Text underneath, which OCRs the displayed base. The toolbar still
+    /// highlights Search alone.
     @discardableResult
     private func showImageTextSearch() -> Bool {
         guard currentTabSelection == .editor,
@@ -3679,24 +3566,9 @@ final class EditorWindowController: NSWindowController {
             state.userSelectedTool(.textSelect)
         }
         state.showImageTextSearchPanel()
-        primeImageTextSearchScanStage(state)
         sidebar?.focusImageTextSearchField()
         syncToolbarHighlights()
         return true
-    }
-
-    /// When Search is entered from an already-running Live Text session, the
-    /// selected tool does not transition and its observer cannot seed the scan
-    /// stage. Derive the current point in that same pipeline here.
-    private func primeImageTextSearchScanStage(_ state: EditorState) {
-        guard let stage = imageTextSearchScanStageOnEnteringSearch(
-            showingEnhanced: state.showingEnhanced,
-            hasEnhancedImage: state.enhancedImage != nil,
-            enhanceSessionActive: state.liveTextEnhanceRestore != nil,
-            enhanceRunning: state.enhanceRunning,
-            liveTextHasText: state.liveTextHasText)
-        else { return }
-        state.imageTextSearchScanStage = stage
     }
 
     /// Esc from the search field/canvas returns to the neutral Select mode.
@@ -5368,7 +5240,7 @@ final class EditorWindowController: NSWindowController {
             // text tool with no layout is dead, and staying in it would let the
             // next state change restart the very read just cancelled.
             self.canvas?.cancelLiveTextRecognition()
-            if self.state?.cancelLiveTextRead() == true { self.onEnhanceCancel?() }
+            self.state?.cancelLiveTextRead()
         }
     }
 

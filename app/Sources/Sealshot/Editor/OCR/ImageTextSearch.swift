@@ -23,12 +23,10 @@ enum ImageTextSearchStatus: Equatable {
     case matches(current: Int, total: Int)
 }
 
-/// Search stays behind a waiting panel until Live Text has completed the best
-/// OCR pass available. A capture without a cached enhanced base first needs a
-/// raw-text decision; text-bearing captures then wait for enhanced-base OCR.
+/// Search stays behind a waiting panel until Live Text's first OCR pass over
+/// the displayed base lands. Live Text reads whatever base is on screen, so
+/// there is nothing else to wait for.
 enum ImageTextSearchScanStage: Equatable {
-    case waitingForEnhancementDecision
-    case waitingForEnhancedOCR
     case recognizingCurrentBase
     case ready
 

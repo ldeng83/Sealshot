@@ -47,6 +47,16 @@ struct CaptureIndexRow: Equatable, Codable {
     /// v-dims: capturing application name; nil when unknown (videos/legacy).
     /// Library display + `.sourceApp` sort key.
     let sourceApp: String?
+    /// When the user last brought this capture up from OUTSIDE the recent strip
+    /// (a Library open, a cross-item undo jump). `.distantPast` = never.
+    ///
+    /// Deliberately NOT the file's mtime: background work rewrites old packages
+    /// (`VisualTagBackfillJob`, the OCR backfill, the `derived.json` Live Text
+    /// layout) and would float captures the user never touched to the front of
+    /// the strip. This column records a user action, so the strip's "recent"
+    /// means recently USED. Written only by `markActivity`; the reconcile upsert
+    /// does not list it, so re-indexing preserves it.
+    let activityAt: Date
 
     init(path: String, folder: String, mtime: Date, captureDate: Date,
          userTitle: String?, title: String, tags: [String],
@@ -55,11 +65,13 @@ struct CaptureIndexRow: Equatable, Codable {
          isFavorite: Bool = false, status: CaptureStatus = .new,
          captureKind: CaptureKind? = nil, durationSeconds: Double = 0,
          collectionIDs: [UUID] = [],
-         width: Int = 0, height: Int = 0, sourceApp: String? = nil) {
+         width: Int = 0, height: Int = 0, sourceApp: String? = nil,
+         activityAt: Date = .distantPast) {
         self.path = path
         self.folder = folder
         self.mtime = mtime
         self.captureDate = captureDate
+        self.activityAt = activityAt
         self.userTitle = userTitle
         self.title = title
         self.tags = tags
@@ -100,6 +112,9 @@ struct CaptureIndexRow: Equatable, Codable {
         width = try c.decodeIfPresent(Int.self, forKey: .width) ?? 0
         height = try c.decodeIfPresent(Int.self, forKey: .height) ?? 0
         sourceApp = try c.decodeIfPresent(String.self, forKey: .sourceApp)
+        // Queued before `activityAt` existed, or simply never opened — either
+        // way "no activity", which loses every recency comparison.
+        activityAt = try c.decodeIfPresent(Date.self, forKey: .activityAt) ?? .distantPast
     }
 }
 
@@ -281,6 +296,23 @@ final class LibraryIndexDB {
         try stepDone(stmt)
     }
 
+    /// Record that the user brought this capture up from outside the recent
+    /// strip. Touches nothing else — the capture's own
+    /// capture date, title, tags and FTS stay exactly as they were, and the file
+    /// on disk is not written at all (viewing must not dirty a package, which
+    /// would make backups re-copy it and turn "Modified" into "last opened").
+    /// Always records, whether or not `captures` holds the path yet — the row
+    /// may be indexed a moment later (reconcile scans concurrently) and the
+    /// stamp is waiting for it.
+    func markActivity(path: String, at date: Date) throws {
+        let stmt = try prepare("INSERT INTO capture_activity(path, at) VALUES(?,?) "
+                               + "ON CONFLICT(path) DO UPDATE SET at=excluded.at")
+        defer { sqlite3_finalize(stmt) }
+        bind(stmt, 1, path)
+        sqlite3_bind_double(stmt, 2, date.timeIntervalSince1970)
+        try stepDone(stmt)
+    }
+
     /// Correct only the sort date for an existing row (leaves title/tags/FTS
     /// untouched) — used by the one-time repair that restores stable manifest
     /// capture dates over filesystem dates wrongly stamped by earlier reconciles.
@@ -296,7 +328,10 @@ final class LibraryIndexDB {
         guard !paths.isEmpty else { return }
         let del = try prepare("DELETE FROM captures WHERE path = ?")
         let fts = try prepare("DELETE FROM captures_fts WHERE path = ?")
-        defer { sqlite3_finalize(del); sqlite3_finalize(fts) }
+        // The activity stamp goes with the capture, or a path reused by a later
+        // file would inherit a stranger's recency.
+        let act = try prepare("DELETE FROM capture_activity WHERE path = ?")
+        defer { sqlite3_finalize(del); sqlite3_finalize(fts); sqlite3_finalize(act) }
         for path in paths {
             sqlite3_reset(del); sqlite3_clear_bindings(del)
             bind(del, 1, path)
@@ -304,6 +339,9 @@ final class LibraryIndexDB {
             sqlite3_reset(fts); sqlite3_clear_bindings(fts)
             bind(fts, 1, path)
             try stepDone(fts)
+            sqlite3_reset(act); sqlite3_clear_bindings(act)
+            bind(act, 1, path)
+            try stepDone(act)
         }
     }
 
@@ -312,8 +350,9 @@ final class LibraryIndexDB {
     /// All rows directly inside `folder`, newest capture first.
     func rows(inFolder folder: String) throws -> [CaptureIndexRow] {
         let stmt = try prepare("""
-            SELECT path, folder, mtime, capture_date, user_title, title, tags, file_size, category, is_favorite, status, capture_kind, duration_seconds, collection_ids, smart_keywords, width, height, source_app
-            FROM captures WHERE folder = ? ORDER BY capture_date DESC
+            SELECT c.path, c.folder, c.mtime, c.capture_date, c.user_title, c.title, c.tags, c.file_size, c.category, c.is_favorite, c.status, c.capture_kind, c.duration_seconds, c.collection_ids, c.smart_keywords, c.width, c.height, c.source_app, COALESCE(a.at, 0)
+            FROM captures c LEFT JOIN capture_activity a ON a.path = c.path
+            WHERE c.folder = ? ORDER BY c.capture_date DESC
             """)
         defer { sqlite3_finalize(stmt) }
         bind(stmt, 1, folder)
@@ -350,7 +389,13 @@ final class LibraryIndexDB {
                 collectionIDs: collectionIDs,
                 width: Int(sqlite3_column_int(stmt, 15)),
                 height: Int(sqlite3_column_int(stmt, 16)),
-                sourceApp: sourceAppRaw.isEmpty ? nil : sourceAppRaw))
+                sourceApp: sourceAppRaw.isEmpty ? nil : sourceAppRaw,
+                // col 18 = the joined capture_activity.at (REAL). 0 = never
+                // opened, read as `.distantPast` so it loses every comparison.
+                activityAt: {
+                    let raw = sqlite3_column_double(stmt, 18)
+                    return raw > 0 ? Date(timeIntervalSince1970: raw) : .distantPast
+                }()))
         }
         return out
     }
@@ -449,6 +494,15 @@ final class LibraryIndexDB {
             );
             CREATE INDEX IF NOT EXISTS captures_folder_date
               ON captures(folder, capture_date DESC);
+            -- When the user last brought a capture up from outside the recent
+            -- strip. Its OWN table, not a `captures` column, so the stamp never
+            -- depends on the capture already being indexed: reconcile scans
+            -- concurrently, so an open can land before (or between) the row
+            -- upserts, and a row can be deleted and re-added under it.
+            CREATE TABLE IF NOT EXISTS capture_activity(
+              path TEXT PRIMARY KEY,
+              at REAL NOT NULL
+            );
             CREATE VIRTUAL TABLE IF NOT EXISTS captures_fts USING fts5(
               path UNINDEXED, ocr_text,
               tokenize='unicode61 remove_diacritics 2');

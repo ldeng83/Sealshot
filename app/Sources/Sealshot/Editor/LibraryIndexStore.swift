@@ -509,7 +509,17 @@ actor LibraryIndexStore {
                 // and Show-in-Library all rely on URL equality with
                 // contentsOfDirectory-sourced URLs (same rule as makeLibraryItems).
                 url: URL(fileURLWithPath: row.path, isDirectory: false),
-                captureDate: isTrash ? row.mtime : row.captureDate,
+                // Recent strip: the ordering key is when the capture last
+                // MATTERED to the user — its capture date, or the later moment
+                // they opened it from outside the strip (`capture_activity`). This is
+                // both the sort key and the window key, since `merged` derives
+                // the recent-day window from the same field: keying the window on
+                // capture date alone would leave an item the user just opened out
+                // of the listing entirely, which is what the old front-pinned
+                // tile was papering over. NOT the file's mtime — background
+                // rewrites (visual-tag/OCR backfill, `derived.json`) would float
+                // untouched captures to the front; see `reconcileDateAction`.
+                captureDate: isTrash ? row.mtime : max(row.captureDate, row.activityAt),
                 displayName: libraryDisplayName(for: row),
                 // A video `.seal` (recording) is discriminated by captureKind — the
                 // same derivation makeLibraryItems uses — so the strip shows its
@@ -524,6 +534,19 @@ actor LibraryIndexStore {
         let recordings = recordingsFolder.map { RecordingsLibrary.items(in: $0) } ?? []
         return StripItem.merged(captures: captures, recordings: recordings,
                                 coveringDays: coveringDays, now: now)
+    }
+
+    /// Record that the user brought `url` up from outside the recent strip (a
+    /// Library open, a cross-item undo jump), so the strip lists and sorts it as
+    /// recent. Index-only — the capture file is never written for a mere view.
+    ///
+    /// A no-op when the index is unavailable (locked session, broken DB): the
+    /// strip then falls back to capture dates, which is the pre-existing
+    /// behaviour rather than a new failure.
+    func markActivity(url: URL, at date: Date = Date()) async {
+        guard let (db, key) = await database() else { return }
+        try? db.markActivity(path: url.standardizedFileURL.path, at: date)
+        persistIfEncrypted(db: db, key: key)
     }
 
     /// Snapshot of the live tag vocabulary across the whole index. Returns an

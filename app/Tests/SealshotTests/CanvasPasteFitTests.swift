@@ -168,4 +168,77 @@ final class CanvasPasteFitTests: XCTestCase {
         XCTAssertEqual(state.visibleImageSize, CGSize(width: 800, height: 500))
         XCTAssertEqual(state.annotations.count, 2)
     }
+
+    // MARK: - Live Text over a pasted image (bug repro)
+
+    /// White image with `string` drawn large and centered.
+    private func textImage(_ string: String, width: Int = 600, height: Int = 200) -> CGImage {
+        let img = NSImage(size: NSSize(width: width, height: height))
+        img.lockFocus()
+        NSColor.white.setFill()
+        NSRect(x: 0, y: 0, width: width, height: height).fill()
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.boldSystemFont(ofSize: 72),
+            .foregroundColor: NSColor.black,
+        ]
+        let s = NSAttributedString(string: string, attributes: attrs)
+        let size = s.size()
+        s.draw(at: NSPoint(x: (CGFloat(width) - size.width) / 2,
+                           y: (CGFloat(height) - size.height) / 2))
+        img.unlockFocus()
+        var rect = NSRect(x: 0, y: 0, width: width, height: height)
+        return img.cgImage(forProposedRect: &rect, context: nil, hints: nil)!
+    }
+
+    /// The reported bug: New Canvas ▸ Paste ▸ Live Text said "no text found"
+    /// over plainly visible text. The paste lands as an image annotation and
+    /// OCR read the base only — a fully transparent canvas.
+    func testLiveTextReadsAPastedImagesText() async throws {
+        let controller = makeController(source: image(800, 500, opaque: false))
+        let state = try XCTUnwrap(controller.debugState)
+        let canvas = try XCTUnwrap(controller.debugCanvasView)
+        try paste(textImage("HELLO WORLD"), into: controller)
+        XCTAssertEqual(state.annotations.count, 1, "the paste is an image annotation")
+
+        let layout = try await TextRecognizer().recognize(canvas.debugOCRInputImage)
+        let text = layout.lines.map(\.text).joined(separator: " ").uppercased()
+        XCTAssertTrue(text.contains("HELLO"), "got: \(text)")
+        XCTAssertTrue(text.contains("WORLD"), "got: \(text)")
+    }
+
+    /// The same text on a CAPTURE, not a blank canvas: an image pasted over a
+    /// screenshot was equally invisible to Live Text.
+    func testLiveTextReadsAnImagePastedOntoACapture() async throws {
+        let controller = makeController(source: image(1200, 900, opaque: true))
+        let canvas = try XCTUnwrap(controller.debugCanvasView)
+        try paste(textImage("HELLO WORLD"), into: controller)
+
+        let layout = try await TextRecognizer().recognize(canvas.debugOCRInputImage)
+        let text = layout.lines.map(\.text).joined(separator: " ").uppercased()
+        XCTAssertTrue(text.contains("HELLO"), "got: \(text)")
+    }
+
+    /// Compositing must not change the OCR frame: recognized boxes are
+    /// normalized against `visibleImageSize`, so the input has to stay exactly
+    /// that many pixels.
+    func testOCRInputKeepsTheVisibleImageSize() throws {
+        let controller = makeController(source: image(800, 500, opaque: false))
+        let state = try XCTUnwrap(controller.debugState)
+        let canvas = try XCTUnwrap(controller.debugCanvasView)
+        try paste(image(300, 200, opaque: true), into: controller)
+
+        let input = canvas.debugOCRInputImage
+        XCTAssertEqual(CGSize(width: input.width, height: input.height),
+                       state.visibleImageSize)
+    }
+
+    /// With no image overlay the OCR input is the base itself — the cheap path
+    /// (and the persisted layout cache) must survive for ordinary captures.
+    func testOCRInputIsTheBaseWhenNothingWasPasted() throws {
+        let controller = makeController(source: image(800, 500, opaque: true))
+        let state = try XCTUnwrap(controller.debugState)
+        let canvas = try XCTUnwrap(controller.debugCanvasView)
+
+        XCTAssertTrue(canvas.debugOCRInputImage === state.displayBase)
+    }
 }

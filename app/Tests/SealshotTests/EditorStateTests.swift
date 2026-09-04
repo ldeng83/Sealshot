@@ -125,7 +125,7 @@ final class EditorStateTests: XCTestCase {
         XCTAssertFalse(state.showsInfoPanel)
         XCTAssertTrue(state.selectedAnnotationIDs.isEmpty)
         XCTAssertEqual(state.imageTextSearchStatus, .recognizing)
-        XCTAssertEqual(state.imageTextSearchScanStage, .waitingForEnhancementDecision)
+        XCTAssertEqual(state.imageTextSearchScanStage, .recognizingCurrentBase)
 
         // Re-clicking even the already-underlying Select tool exits Find.
         state.userSelectedTool(.select)

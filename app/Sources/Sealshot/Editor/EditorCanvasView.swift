@@ -507,11 +507,6 @@ final class EditorCanvasView: NSView {
             _ = state.showingEnhanced
             _ = state.enhancedImage
             _ = state.enhanceRunning
-            // Gates `ensureRecognition` while a Live Text read waits for its
-            // enhanced base. Tracking it here is what restarts recognition the
-            // moment the wait ends — including the no-text case, where no base
-            // changes and nothing else would invalidate.
-            _ = state.liveTextAwaitingEnhancement
             // The cutout is an alternate base exactly like the enhanced one
             // (`displayBase` returns it first), so the canvas must repaint when
             // it arrives or is toggled. Without these, Remove Background left
@@ -2554,10 +2549,34 @@ final class EditorCanvasView: NSView {
 
     // MARK: - Live Text (OCR)
 
+    /// Inserted-image overlays, in draw order. A pasted or dropped picture is
+    /// CONTENT — its text is text the user is looking at — so OCR has to read
+    /// through it. Drawn markup (arrows, text boxes, blurs) is deliberately
+    /// excluded: that layer is the user's own annotation of the image, not text
+    /// belonging to it.
+    private var ocrImageOverlays: [Annotation] {
+        state.annotations.filter { if case .image = $0.geometry { return true }; return false }
+    }
+
     /// The exact image the canvas displays: the active base, cropped to the
-    /// committed crop. OCR runs on this so recognized boxes normalize straight
-    /// onto `currentImageSize()`.
+    /// committed crop, with any inserted-image overlays composited in. OCR runs
+    /// on this so recognized boxes normalize straight onto `currentImageSize()`.
+    ///
+    /// The base ALONE is not what the user sees. File ▸ New Canvas hands you a
+    /// fully transparent base and a pasted screenshot lands entirely in an image
+    /// annotation — so OCR over the base read transparent pixels and Live Text
+    /// reported "no text found" over plainly visible text. Same composite the
+    /// save path writes (`render`), so the OCR input and the exported PNG agree.
     private func currentDisplayedImage() -> CGImage {
+        let overlays = ocrImageOverlays
+        if !overlays.isEmpty,
+           let composite = nsImageToCGImage(render(
+               image: state.displayBase, annotations: overlays,
+               crop: state.croppedRect, contentClip: state.contentClip,
+               scale: state.displayScale, assets: state.decodedImageAssets(),
+               backgroundFill: state.backgroundFill)) {
+            return composite
+        }
         let base = state.displayBase
         guard let crop = state.croppedRect else { return base }
         // Viewport may overhang the source (a grown canvas) → transparent there.
@@ -2568,8 +2587,14 @@ final class EditorCanvasView: NSView {
     /// Session-wide cache key for the current base, or nil for an unsaved
     /// scratch canvas — with no file there is nothing stable to key on, and
     /// its pixels can change under the same identity.
+    ///
+    /// Also nil once image overlays are composited in: `TextLayoutKey` names the
+    /// capture's BASE (url + base kind + crop), and that layout is persisted
+    /// inside the package. Keying a composite by it would serve one arrangement
+    /// of pasted images as another's — and would poison the stored layout for
+    /// every later reader. The in-session `ocrKey` cache still covers re-entry.
     private func sharedLayoutKey(for image: CGImage) -> TextLayoutKey? {
-        guard let url = state.sourceURL else { return nil }
+        guard let url = state.sourceURL, ocrImageOverlays.isEmpty else { return nil }
         return TextLayoutCache.key(
             sourceURL: url,
             baseSize: CGSize(width: image.width, height: image.height),
@@ -2578,20 +2603,22 @@ final class EditorCanvasView: NSView {
             croppedRect: state.croppedRect)
     }
 
+    /// Identity of the pixels OCR would read. The image overlays are part of it
+    /// — inserting, moving, resizing or replacing one changes what there is to
+    /// recognize, and `state.annotations` is observed, so the edit re-runs
+    /// recognition instead of leaving a stale "no text" on screen.
     private func ocrKey() -> String {
         let c = state.croppedRect.map { "\($0)" } ?? "full"
-        return "\(ObjectIdentifier(state.displayBase))-\(state.showingEnhanced)-\(c)"
+        let overlays = ocrImageOverlays.map { a -> String in
+            guard case let .image(rect, assetID) = a.geometry else { return "" }
+            return "\(assetID)@\(rect)x\(a.style.opacity)@\(a.transform)"
+        }.joined(separator: ",")
+        return "\(ObjectIdentifier(state.displayBase))-\(state.showingEnhanced)-\(c)-[\(overlays)]"
     }
 
     /// Start recognition if the cache is stale. Called when the .textSelect
     /// tool becomes active and when the base image changes while it is active.
     private func ensureRecognition() {
-        // A Live Text read waiting on its enhanced base must not read the base
-        // being replaced: the pass would be thrown away with those pixels, and
-        // its progress overlay would sit on screen next to the enhancer's.
-        // Cleared when the base lands (or the attempt ends) — and since this
-        // flag is observed, that clearing brings us straight back here.
-        guard !state.liveTextAwaitingEnhancement else { return }
         let key = ocrKey()
         // Already have the layout for this exact base, or a recognition for it
         // is already in flight — unrelated state changes must not restart it.
@@ -2685,6 +2712,11 @@ final class EditorCanvasView: NSView {
         cancelBarcodeRecognition(clearResults: false)
         QRPayloadPopover.dismiss()
     }
+
+    /// Test hook: the exact pixels handed to Vision for Live Text / Find in
+    /// Image. Tests assert on the OCR INPUT rather than driving a full
+    /// recognition, which needs a real window and the enhance session.
+    var debugOCRInputImage: CGImage { currentDisplayedImage() }
 
     /// Cancel an in-flight Live Text read from the overlay's Cancel button.
     /// The controller owns that overlay, so it needs a way in.
@@ -2794,13 +2826,6 @@ final class EditorCanvasView: NSView {
             needsDisplay = true
             return
         }
-        guard imageTextSearchScanCanFinish else {
-            imageTextSearchMatches = []
-            activeImageTextSearchMatch = 0
-            publishImageTextSearchStatus(.recognizing)
-            needsDisplay = true
-            return
-        }
         if !state.imageTextSearchScanStage.isReady {
             state.imageTextSearchScanStage = .ready
         }
@@ -2842,25 +2867,6 @@ final class EditorCanvasView: NSView {
         needsDisplay = true
     }
 
-    /// A preliminary raw OCR result must not reveal the fields while Live Text
-    /// is still deciding on or generating an enhanced base. If enhancement
-    /// fails/cancels, fall back to the completed raw layout instead of leaving
-    /// Search stuck behind the waiting panel.
-    private var imageTextSearchScanCanFinish: Bool {
-        switch state.imageTextSearchScanStage {
-        case .waitingForEnhancementDecision:
-            return false
-        case .waitingForEnhancedOCR:
-            if state.showingEnhanced, state.enhancedImage != nil { return true }
-            if !state.enhanceRunning, state.enhancedImage == nil {
-                state.imageTextSearchScanStage = .recognizingCurrentBase
-                return true
-            }
-            return false
-        case .recognizingCurrentBase, .ready:
-            return true
-        }
-    }
 
     private func clearImageTextSearch() {
         guard !imageTextSearchMatches.isEmpty || imageTextSearchRequestKey != nil

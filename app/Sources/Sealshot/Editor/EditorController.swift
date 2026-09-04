@@ -337,17 +337,8 @@ final class EditorController {
         isEnhancing = true
         state.enhanceRunning = true
         let progress = EnhanceProgress()
-        controller.showEnhancingOverlay(progress: progress, onCancel: { [weak self, weak state] in
+        controller.showEnhancingOverlay(progress: progress, onCancel: { [weak self] in
             self?.enhanceTask?.cancel()
-            // When this enhancement is the opening move of a Live Text read,
-            // cancelling it cancels the read. The tool exists to show text and
-            // the only base it could read is the one being discarded, so
-            // leaving it selected would strand the user in a dead tool — and
-            // the next state change would restart the very work just
-            // cancelled. `cancelLiveTextRead` restores the pre-session base and
-            // leaves the tool. A plain Enhance-panel Apply has no session and
-            // is unaffected.
-            if state?.liveTextEnhanceRestore != nil { state?.cancelLiveTextRead() }
         })
         let params = state.enhanceDraft   // snapshot before the async hop
         enhanceTask = Task { @MainActor [weak self, weak controller, weak state] in
@@ -362,9 +353,6 @@ final class EditorController {
                 self.isEnhancing = false
                 self.enhanceTask = nil
                 state.enhanceRunning = false
-                // Success, failure or cancellation: the canvas is no longer
-                // waiting on a base that may never arrive.
-                state.liveTextAwaitingEnhancement = false
             }
             do {
                 let enhanced = try await self.enhancer.enhance(

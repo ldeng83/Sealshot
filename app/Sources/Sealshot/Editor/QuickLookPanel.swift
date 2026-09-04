@@ -11,6 +11,54 @@ import AppKit
 final class QuickLookFloatingPanel: NSPanel {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
+
+    /// The window whose key status the preview's keys actually depend on — the
+    /// editor window that owns the Library. Weak: the panel must never keep it
+    /// alive, and a closed editor simply leaves nothing to restore.
+    weak var hostWindow: NSWindow?
+
+    /// Hand the keyboard back to the host window. Being never-key AND
+    /// non-activating means a click on this panel changes NOTHING about who owns
+    /// the keyboard: on a second display the user clicks another app, Sealshot
+    /// deactivates, and clicking back on the preview leaves the OTHER app front
+    /// (measured: frontmost stayed "Finder" after a click on the preview card).
+    /// Esc, the arrows and Space are all routed by `EditorWindow`, which only
+    /// runs `performKeyEquivalent` while it is the key window of the ACTIVE app,
+    /// so the preview goes deaf — and since the panel covers the whole screen,
+    /// every click that isn't on the card hits the dismiss tap-catcher, leaving
+    /// the user no way back except closing the preview.
+    ///
+    /// So a click restores the routing itself, which is what Finder's own Quick
+    /// Look does. The panel stays never-key: the editor keeps first responder,
+    /// and `.floating` outranks the host's `.normal` level, so re-fronting the
+    /// host cannot bury the preview.
+    func restoreKeyboardRouting() {
+        let work = Self.routingWork(appIsActive: NSApp.isActive,
+                                    hostIsKey: hostWindow?.isKeyWindow ?? true)
+        if work.activate { NSApp.activate(ignoringOtherApps: true) }
+        if work.makeKey { hostWindow?.makeKeyAndOrderFront(nil) }
+    }
+
+    /// What a click has to repair, split out as a pure decision so it can be
+    /// tested without activating the test runner or fighting over key status.
+    /// A missing host reads as "nothing to re-key".
+    static func routingWork(appIsActive: Bool, hostIsKey: Bool)
+        -> (activate: Bool, makeKey: Bool) {
+        (activate: !appIsActive, makeKey: !hostIsKey)
+    }
+
+    /// Every press that lands on the panel re-arms the keyboard first, before
+    /// SwiftUI sees the click — so the same gesture that dismisses (the dim) or
+    /// hits a button also leaves the app in a state where the keys work.
+    override func sendEvent(_ event: NSEvent) {
+        switch event.type {
+        case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+            restoreKeyboardRouting()
+        default:
+            break
+        }
+        super.sendEvent(event)
+    }
 }
 
 /// The panel can never become key, so EVERY click on it is a "first mouse" —
@@ -69,6 +117,7 @@ struct QuickLookPanelPresenter: NSViewRepresentable {
                 contentRect: screenFrame,
                 styleMask: [.borderless, .nonactivatingPanel],
                 backing: .buffered, defer: false)
+            p.hostWindow = host
             p.isFloatingPanel = true
             p.level = .floating
             p.isOpaque = false

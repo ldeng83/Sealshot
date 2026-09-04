@@ -701,7 +701,7 @@ final class EditorState {
         clearSelection()
         if focusRect == nil { imageTextSearchScope = .wholeImage }
         imageTextSearchStatus = .recognizing
-        imageTextSearchScanStage = .waitingForEnhancementDecision
+        imageTextSearchScanStage = .recognizingCurrentBase
         sidebarPanelMode = .imageTextSearch
         enhanceEditing = false
     }
@@ -1091,16 +1091,9 @@ final class EditorState {
 
     /// `showingEnhanced` value to restore when the Live Text tool is left;
     /// nil = no session active (enhanced was already the user's visible base,
-    /// or Live Text is idle). The Live Text tool OCRs `displayBase`, and
-    /// super-resolved glyphs read far better than raw small fonts — so the
-    /// tool temporarily shows the enhanced base for its duration.
-    /// Unobserved bookkeeping; saves persist `persistedShowingEnhanced`.
-    @ObservationIgnored var liveTextEnhanceRestore: Bool? = nil
-
     /// Set when a capture opened with Enhance Clarity forced off for speed —
-    /// holds the user's own choice so a save can still record it. Same shape as
-    /// `liveTextEnhanceRestore`, and for the same reason: the canvas shows one
-    /// thing while the manifest must keep saying another.
+    /// holds the user's own choice so a save can still record it: the canvas
+    /// shows one thing while the manifest must keep saying another.
     @ObservationIgnored var enhanceOpenSuppressedRestore: Bool? = nil
 
     /// Source-pixel count from which a capture is "large" enough that decoding
@@ -1137,28 +1130,17 @@ final class EditorState {
         enhanceOpenSuppressedRestore = chosen
     }
 
-    /// What saves should write for the manifest's `showingEnhanced`: the
-    /// user's pre-session choice while a Live Text session is active, or the
-    /// choice a speed-suppressed open is standing in for, else the live value.
-    /// Keeps a temporary flip out of the `.seal` no matter when an autosave,
-    /// capture swap, or crash happens.
+    /// What saves should write for the manifest's `showingEnhanced`: the choice
+    /// a speed-suppressed open is standing in for, else the live value. Keeps
+    /// that stand-in out of the `.seal` no matter when an autosave, capture
+    /// swap, or crash happens.
     var persistedShowingEnhanced: Bool {
-        liveTextEnhanceRestore ?? enhanceOpenSuppressedRestore ?? showingEnhanced
+        enhanceOpenSuppressedRestore ?? showingEnhanced
     }
 
-    /// Label for the Live Text progress overlay.
-    ///
-    /// Live Text runs recognize → auto-enhance → recognize. The first pass runs
-    /// on the original base, before the enhanced one exists — call that
-    /// "Initializing…" so the sequence reads Initializing → Enhancing →
-    /// Recognizing instead of showing "Recognizing" twice with an enhance in
-    /// between. Once the enhanced base is actually showing (or no session is
-    /// running at all), the pass is the real read.
-    var liveTextProgressLabel: String {
-        let awaitingEnhancedBase = liveTextEnhanceRestore != nil
-            && !(showingEnhanced && enhancedImage != nil)
-        return awaitingEnhancedBase ? "Initializing…" : "Recognizing text…"
-    }
+    /// Label for the Live Text progress overlay. One pass, one label: Live Text
+    /// reads whatever base is on screen and never generates another.
+    var liveTextProgressLabel: String { "Recognizing text…" }
 
     /// Base/scale a SAVE should composite from — follows the persisted
     /// enhanced choice, not the Live Text session's temporary flip, so a
@@ -1172,74 +1154,14 @@ final class EditorState {
         CGFloat(persistedDisplayBase.width) / CGFloat(sourceImage.width)
     }
 
-    enum LiveTextEnhanceAction: Equatable {
-        /// Nothing to do (enhanced already showing, session already active,
-        /// or read-only capture).
-        case none
-        /// A cached enhanced image was flipped on for the session.
-        case showedExisting
-        /// No enhanced image exists — the caller should run the enhancer.
-        case needsGeneration
-    }
-
-    /// Start (or no-op) the Live Text enhance session when the tool activates.
-    func beginLiveTextEnhanceSession() -> LiveTextEnhanceAction {
-        guard liveTextEnhanceRestore == nil else { return .none }
-        if showingEnhanced && enhancedImage != nil { return .none }
-        guard !isReadOnly else { return .none }
-        liveTextEnhanceRestore = showingEnhanced
-        if enhancedImage != nil {
-            showingEnhanced = true
-            showingCutout = false   // alternate bases are exclusive
-            return .showedExisting
-        }
-        return .needsGeneration
-    }
-
-    /// True from the moment a Live Text read decides it needs an enhanced base
-    /// until that base arrives — or the attempt ends.
-    ///
-    /// The canvas must not recognize while this is set. The base on screen is
-    /// about to be replaced by a 2x one, so reading it costs a full Vision
-    /// pass over pixels discarded seconds later (measured: every capture
-    /// recognized twice, at 1x and again at 2x) and puts a second progress
-    /// overlay on screen beside the enhancer's own.
-    ///
-    /// Set before the text probe rather than when generation starts: the probe
-    /// is asynchronous, and the canvas reacts to the tool change immediately,
-    /// so a flag set later loses the race it exists to win.
-    var liveTextAwaitingEnhancement = false
-
-    /// End the session (tool left / capture swapped), restoring the user's
-    /// prior original/enhanced choice. A generated image stays cached (and
-    /// persists as `enhanced.png`) so the next session is instant. Returns
-    /// true when generation was still in flight — the caller should cancel it.
-    @discardableResult
-    func endLiveTextEnhanceSession() -> Bool {
-        // Whatever ended the session, nothing is waiting for a base any more.
-        // Leaving this set would wedge the canvas: `ensureRecognition` would
-        // keep returning early and Live Text would never read anything again.
-        liveTextAwaitingEnhancement = false
-        guard let restore = liveTextEnhanceRestore else { return false }
-        liveTextEnhanceRestore = nil
-        let awaitingGeneration = (enhancedImage == nil)
-        if showingEnhanced != restore { showingEnhanced = restore }
-        return awaitingGeneration
-    }
-
     /// Cancel an in-flight Live Text read from the progress overlay's Cancel
-    /// button: restore the user's pre-session base and leave the tool.
+    /// button: leave the tool.
     ///
     /// Leaving the tool is the point. Text-select with no recognized layout is
     /// a dead tool, and staying in it lets the next state change re-enter
     /// `ensureRecognition()` and restart the very read the user just cancelled.
-    /// Returns true when an enhance generation was still running, so the caller
-    /// cancels it too — same contract as `endLiveTextEnhanceSession`.
-    @discardableResult
-    func cancelLiveTextRead() -> Bool {
-        let awaitingGeneration = endLiveTextEnhanceSession()
+    func cancelLiveTextRead() {
         selectedTool = .select
-        return awaitingGeneration
     }
 
     /// The image the canvas/composite should render: enhanced when shown and

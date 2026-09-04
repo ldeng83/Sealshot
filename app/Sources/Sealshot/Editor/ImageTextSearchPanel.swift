@@ -228,36 +228,3 @@ private final class ImageTextSearchField: NSSearchField {
     override func cancelOperation(_ sender: Any?) { onExit?() }
 }
 
-/// Where Find in Image joins the Live Text pipeline when it is opened from an
-/// already-running Live Text session. nil = leave the stage as it is.
-///
-/// Opening the panel parks the stage at `.waitingForEnhancementDecision`, and
-/// the tool-change observer that normally resolves it cannot fire, because the
-/// tool is already `.textSelect` — there is no transition to observe. Anything
-/// left unresolved here hangs the panel on "waiting for image scan" for good:
-/// `imageTextSearchScanCanFinish` reads that stage as "not ready", and nothing
-/// else will revisit it.
-///
-/// That is what happened to a capture Live Text had already read successfully.
-/// Only the no-text case was handled, so FINDING text — the ordinary outcome —
-/// fell through every branch and left the decision pending after it had
-/// already been made. Waiting is now the exception (an enhancement genuinely
-/// in flight, whose result will replace what is on screen) rather than the
-/// default.
-func imageTextSearchScanStageOnEnteringSearch(
-    showingEnhanced: Bool,
-    hasEnhancedImage: Bool,
-    enhanceSessionActive: Bool,
-    enhanceRunning: Bool,
-    liveTextHasText: Bool?
-) -> ImageTextSearchScanStage? {
-    if showingEnhanced, hasEnhancedImage { return .recognizingCurrentBase }
-    guard enhanceSessionActive else { return nil }
-    // An enhanced base on its way in will replace these pixels, so scanning
-    // them now would produce boxes for an image about to be discarded.
-    if enhanceRunning { return .waitingForEnhancedOCR }
-    // Everything else — text found, no text, or a read still in flight — scans
-    // what is on screen. A read in flight is not a reason to wait here; the
-    // scan reports "recognizing" until the layout lands and resolves itself.
-    return .recognizingCurrentBase
-}
