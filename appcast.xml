@@ -4,6 +4,23 @@
     <title>Sealshot</title>
     <!-- newest items first -->
     <item>
+      <title>0.8.2</title>
+      <pubDate>Fri, 04 Sep 2026 21:39:35 +0000</pubDate>
+      <sparkle:version>25</sparkle:version>
+      <sparkle:shortVersionString>0.8.2</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>Fixes</h2>
+<ul>
+<li><b>Live Text now reads pasted images.</b> Paste a screenshot onto a new canvas (or on top of another capture) and Live Text, Find in Image and QR detection said "no text found" over text that was plainly on screen — they were reading the canvas underneath the pasted picture instead of the picture. They now read what you see.</li>
+<li><b>Quick Look keeps its keyboard on a second display.</b> With the preview open, clicking another app on your other monitor and then clicking back on the preview left Esc, the arrow keys and Space doing nothing — the preview was still on screen but the keyboard had stayed with the other app, and the only way out was dismissing the preview. Clicking the preview now takes the keyboard back, the way Finder's Quick Look does.</li>
+<li><b>The strip no longer sticks on an old capture you opened.</b> Opening an image from the Library that was too old to be in the editor's strip used to park it in the first slot for the rest of the session, so every screenshot you took afterwards appeared *behind* it. Opened captures now simply count as recent and take their place in the strip like anything else — and a new screenshot is always first again. Nothing is written to the capture itself just because you looked at it.</li>
+<li><b>Live Text no longer switches Enhance Clarity on for you.</b> Picking the Live Text tool used to turn Enhance Clarity on behind your back — and on a capture that had never been enhanced, it quietly ran the whole enhancement first, leaving that generated image saved inside the capture afterwards. Live Text now simply reads the picture you are looking at: the enhanced version when you have Enhance Clarity on, the original when you don't. Find in Image and QR detection follow the same rule. If small text reads poorly, turn on Enhance Clarity and Live Text will use it.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/ldeng83/Sealshot/releases/download/v0.8.2/Sealshot-0.8.2.zip" sparkle:edSignature="YVX8lIpPOltKAuDx0NVcj1u5iCrhAn5nGaGJ+CRfgLHBG4ZN24S1PxXMJ8MWLCKA9PAkMofeNkuG6z73U60mDg==" length="69522048" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>0.8.1</title>
       <pubDate>Thu, 27 Aug 2026 18:13:52 +0000</pubDate>
       <sparkle:version>24</sparkle:version>
