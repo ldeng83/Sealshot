@@ -7,6 +7,17 @@ your Mac. No account. No telemetry. No cloud.
 
 **[seal-shot.com](https://seal-shot.com)** · [Download the notarized app](https://seal-shot.com/download/) · [Documentation](https://seal-shot.com/docs/) · [Donate](https://seal-shot.com/donate/)
 
+## Install
+
+### Homebrew
+
+```bash
+brew install --cask ldeng83/tap/sealshot
+```
+```bash
+brew uninstall --cask sealshot
+```
+
 ## What it does
 
 - **Capture** — area, window, fullscreen, delayed, and scrolling capture, with
