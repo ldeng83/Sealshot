@@ -7,13 +7,15 @@ your Mac. No account. No telemetry. No cloud.
 
 **[seal-shot.com](https://seal-shot.com)** · [Download the notarized app](https://seal-shot.com/download/) · [Documentation](https://seal-shot.com/docs/) · [Donate](https://seal-shot.com/donate/)
 
-## Install
+## Homebrew
 
-### Homebrew
+### Install
 
 ```bash
 brew install --cask ldeng83/tap/sealshot
 ```
+
+### Uninstall
 ```bash
 brew uninstall --cask sealshot
 ```
