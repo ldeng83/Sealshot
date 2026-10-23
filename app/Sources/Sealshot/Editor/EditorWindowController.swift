@@ -577,6 +577,8 @@ final class EditorWindowController: NSWindowController {
         metaRow.onResizeButtonClicked = { [weak self] btn in
             self?.toggleResizePopover(anchor: btn)
         }
+        metaRow.onOrientImage = { [weak self] step in self?.applyImageOrientation(step) }
+        metaRow.onResetOrientation = { [weak self] in self?.resetImageOrientation() }
         metaRow.anchorZoomCluster(toCenterOf: canvasHost)
 
         let split = NSSplitView()
@@ -2171,6 +2173,8 @@ final class EditorWindowController: NSWindowController {
         newMeta.onResizeButtonClicked = { [weak self] btn in
             self?.toggleResizePopover(anchor: btn)
         }
+        newMeta.onOrientImage = { [weak self] step in self?.applyImageOrientation(step) }
+        newMeta.onResetOrientation = { [weak self] in self?.resetImageOrientation() }
         leftColumn.insertArrangedSubview(newMeta, at: idx)
         leftColumn.removeArrangedSubview(oldMeta)
         oldMeta.removeFromSuperview()
@@ -2413,6 +2417,9 @@ final class EditorWindowController: NSWindowController {
     }
 
     private func syncObjectMenuState() {
+        let canOrient = state.map { !$0.isReadOnly } == true && playingVideoURL == nil
+        ObjectMenuState.shared.setCanOrientImage(canOrient,
+                                                 isOriented: canOrient && state?.orientation.isIdentity == false)
         guard let state = state, !state.isReadOnly else {
             ObjectMenuState.shared.update(hasSelection: false, hasFlippableSelection: false)
             return
@@ -3033,6 +3040,8 @@ final class EditorWindowController: NSWindowController {
         }
         canvas.onRevertToOriginal = { [weak self] in self?.revertToOriginal() }
         canvas.onCommitCrop = { [weak self] in self?.commitCrop() }
+        canvas.onOrientImage = { [weak self] step in self?.applyImageOrientation(step) }
+        canvas.onResetOrientation = { [weak self] in self?.resetImageOrientation() }
         canvas.onAnnotationSettled = { [weak self] in self?.expandCanvasToFitAnnotations() }
         canvas.onSummarizeCapture = { [weak self] in self?.runAITextAction(.summarize) }
         canvas.onChatAboutCapture = { [weak self] in self?.runCaptureChat() }
@@ -4358,7 +4367,9 @@ final class EditorWindowController: NSWindowController {
             // dropped here and in the package (regenerated on demand).
             enhancedImage: atNative ? state.enhancedImage : nil,
             showingEnhanced: atNative ? state.showingEnhanced : false,
-            pristineSource: atNative ? nil : pristine
+            pristineSource: atNative ? nil : pristine,
+            orientation: state.orientation,
+            unorientedSource: state.unorientedSource
         )
         newState.annotations = AnnotationScaleMath.scaledAnnotations(
             state.annotations, fx: fDoc.x, fy: fDoc.y)
@@ -4415,8 +4426,18 @@ final class EditorWindowController: NSWindowController {
     private func restoreAcrossResize(_ snapshot: EditorSnapshot) {
         UndoDiag.note("restoreAcrossResize '\(snapshot.action ?? "-")' — rebuild swap "
             + "(global u:\(globalUndo.undoStack.count) r:\(globalUndo.redoStack.count))")
-        guard let state, let targetFull = snapshot.sourceImageSize else { return }
-        let pristine = state.pristineSource ?? state.sourceImage
+        guard let state else { return }
+        // ⌘Z across Image ▸ Rotate / Flip: turn the pristine pixels to the
+        // snapshot's orientation first (exact pixel moves), then resample to
+        // its size as for a Resize.
+        let targetOrientation = snapshot.orientation ?? .identity
+        let relative = state.orientation.relative(to: targetOrientation)
+        func turned(_ image: CGImage) -> CGImage? {
+            relative.isIdentity ? image : ImageOrientationRenderer.apply(relative, to: image)
+        }
+        guard let pristine = turned(state.orientedPristine) else { return }
+        let targetFull = snapshot.sourceImageSize
+            ?? CGSize(width: pristine.width, height: pristine.height)
         let atNative = Int(targetFull.width) == pristine.width
             && Int(targetFull.height) == pristine.height
         let newBase: CGImage
@@ -4426,13 +4447,24 @@ final class EditorWindowController: NSWindowController {
             guard let resampled = DocumentResampler.resample(pristine, to: targetFull) else { return }
             newBase = resampled
         }
+        // The alternate bases match the base pixel-for-pixel; they can cross
+        // an orientation change (exact) but not a resample.
+        let keepsBases = atNative && state.pristineSource == nil
         // Rename undo across the rebuild: applyHistory's file-move contract.
         let diskURL = state.sourceURL
         let newState = EditorState(
             sourceImage: newBase,
             sourceURL: snapshot.sourceURL ?? state.sourceURL,
-            pristineSource: atNative ? nil : pristine
+            enhancedImage: keepsBases ? state.enhancedImage.flatMap(turned) : nil,
+            showingEnhanced: keepsBases && (snapshot.showingEnhanced ?? state.showingEnhanced),
+            pristineSource: atNative ? nil : pristine,
+            orientation: targetOrientation,
+            unorientedSource: state.persistedSourceImage
         )
+        if keepsBases {
+            newState.cutoutImage = state.cutoutImage.flatMap(turned)
+            newState.setShowingCutout(snapshot.showingCutout ?? false)
+        }
         newState.annotations = snapshot.annotations
         newState.croppedRect = snapshot.croppedRect
         newState.focusRect = snapshot.focusRect
@@ -4456,6 +4488,41 @@ final class EditorWindowController: NSWindowController {
            let url = self.state?.sourceURL {
             writeRestoredMetadata(patch, at: url)
         }
+        scheduleAutosave()
+    }
+
+    // MARK: - Image ▸ Rotate / Flip
+
+    /// Turn or mirror the whole document (Image menu, the meta row's rotate
+    /// menu, the canvas context menu). Rebuilds the state the way Resize does,
+    /// as ONE undo step; ⌘Z takes the rebuild path (`restoreAcrossResize`),
+    /// which honors the snapshot's orientation.
+    func applyImageOrientation(_ step: ImageOrientationStep) {
+        reorientDocument(action: step.actionName) { $0.reoriented(by: step) }
+    }
+
+    /// Image ▸ Reset Orientation: back to the captured orientation in one
+    /// undo step, keeping every other edit (Revert to Original drops them all).
+    func resetImageOrientation() {
+        guard state?.orientation.isIdentity == false else { return }
+        reorientDocument(action: "Reset Orientation") { $0.reoriented(to: .identity) }
+    }
+
+    private func reorientDocument(action: String, _ build: (EditorState) -> EditorState?) {
+        // Editor tab only: ⌘L / ⌘R must not turn the image hidden behind the Library.
+        guard let state, !state.isReadOnly, playingVideoURL == nil,
+              currentTabSelection == .editor else { return }
+        // Land an in-progress text edit or pending crop first, so it turns
+        // with the image rather than being lost.
+        if canvas?.isEditingText == true { canvas?.commitTextEditing() }
+        if state.pendingCrop != nil { state.abandonCrop() }
+        guard let newState = build(state), newState !== state else { return }
+        state.recordUndoCheckpoint(action: action)
+        let title = window?.title ?? state.sourceURL?.lastPathComponent ?? "Untitled"
+        // Keep the zoom (fitFresh would refit), like Resize.
+        ImageZoomMemory.store(state.zoom, for: state.sourceURL)
+        swap(toState: newState, title: title, fitFresh: false)
+        syncObjectMenuState()   // Reset Orientation's enablement follows the new state
         scheduleAutosave()
     }
 
@@ -4910,7 +4977,9 @@ final class EditorWindowController: NSWindowController {
     /// by AVFoundation — the canvas owns it while the video is open).
     private var canvasVideoPayloadLoader: AnyObject?
     /// The recording currently playing in the canvas (names a saved frame).
-    private var playingVideoURL: URL?
+    private var playingVideoURL: URL? {
+        didSet { syncObjectMenuState() }   // Image ▸ Rotate / Flip is image-only
+    }
 
     /// Play a video `.seal` package inline in the canvas (replacing the floating
     /// sheet). Fired by the strip and the Library for video items. Resolves the

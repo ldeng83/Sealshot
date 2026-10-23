@@ -90,6 +90,21 @@ final class EditorMetaRowView: NSView, NSTextFieldDelegate {
     var resizeAnchorButton: NSButton { dimensionsButton }
     /// Set by the controller; receives the anchor button on click.
     var onResizeButtonClicked: (NSButton) -> Void = { _ in }
+
+    /// Image ▸ Rotate / Flip, beside the Resize trigger: an icon button that
+    /// pops the four steps (same commands as the Image menu).
+    private lazy var orientButton: NSButton = {
+        let image = NSImage(systemSymbolName: "rotate.right",
+                            accessibilityDescription: "Rotate or flip image") ?? NSImage()
+        let b = NSButton(image: image, target: self, action: #selector(orientClicked))
+        b.bezelStyle = .rounded
+        b.controlSize = .regular
+        b.toolTip = "Rotate or flip image"
+        return b
+    }()
+    /// Set by the controller; receives the chosen step.
+    var onOrientImage: (ImageOrientationStep) -> Void = { _ in }
+    var onResetOrientation: () -> Void = {}
     private let stripToggle = NSButton()
     /// The floating zoom cluster (see `anchorZoomCluster`).
     private var zoomCluster: NSStackView?
@@ -293,10 +308,15 @@ final class EditorMetaRowView: NSView, NSTextFieldDelegate {
 
         tabs.translatesAutoresizingMaskIntoConstraints = false
         mediaFilterControl.translatesAutoresizingMaskIntoConstraints = false
-        dimensionsButton.translatesAutoresizingMaskIntoConstraints = false
+        // Rotate/flip + Resize ride one stack, so the rotate button takes no
+        // width while it's folded away (see `applyZoomFit`).
+        let imageStack = NSStackView(views: [orientButton, dimensionsButton])
+        imageStack.orientation = .horizontal
+        imageStack.spacing = 6
+        imageStack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(tabs)
         addSubview(centerStack)
-        addSubview(dimensionsButton)
+        addSubview(imageStack)
         addSubview(mediaFilterControl)
         addSubview(stripToggle)
         // The zoom cluster floats: centered over the CANVAS COLUMN when an
@@ -320,7 +340,7 @@ final class EditorMetaRowView: NSView, NSTextFieldDelegate {
         let leadingGap = centerStack.leadingAnchor.constraint(
             greaterThanOrEqualTo: tabs.trailingAnchor, constant: 16)
         let trailingGap = centerStack.trailingAnchor.constraint(
-            lessThanOrEqualTo: dimensionsButton.leadingAnchor, constant: -16)
+            lessThanOrEqualTo: imageStack.leadingAnchor, constant: -16)
         leadingGap.priority = NSLayoutConstraint.Priority(750)
         trailingGap.priority = NSLayoutConstraint.Priority(750)
         NSLayoutConstraint.activate([
@@ -330,9 +350,9 @@ final class EditorMetaRowView: NSView, NSTextFieldDelegate {
             fallbackCenter,
             leadingGap,
             trailingGap,
-            dimensionsButton.trailingAnchor.constraint(
+            imageStack.trailingAnchor.constraint(
                 equalTo: mediaFilterControl.leadingAnchor, constant: -10),
-            dimensionsButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            imageStack.centerYAnchor.constraint(equalTo: centerYAnchor),
             mediaFilterControl.trailingAnchor.constraint(equalTo: stripToggle.leadingAnchor, constant: -10),
             mediaFilterControl.centerYAnchor.constraint(equalTo: centerYAnchor),
             stripToggle.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
@@ -400,7 +420,9 @@ final class EditorMetaRowView: NSView, NSTextFieldDelegate {
     /// the window shrinking, exactly as the tool bar used to.
     static let zoomPresetCollapseWidth: CGFloat = 730
     /// Narrower still, the zoom SLIDER goes too. Zoom stays fully usable
-    /// without it: − and + step it, and the % readout is editable.
+    /// without it: − and + step it, and the % readout is editable. The
+    /// rotate/flip button folds at the same width — the Image menu and the
+    /// canvas context menu still carry those commands.
     static let zoomSliderCollapseWidth: CGFloat = 600
     /// Extra room needed to expand again, so a resize drag that sits on a
     /// threshold doesn't swap controls in and out every frame.
@@ -445,6 +467,7 @@ final class EditorMetaRowView: NSView, NSTextFieldDelegate {
         if foldSlider != zoomSliderCollapsed {
             zoomSliderCollapsed = foldSlider
             zoomSlider.isHidden = foldSlider
+            orientButton.isHidden = foldSlider
         }
     }
 
@@ -478,6 +501,42 @@ final class EditorMetaRowView: NSView, NSTextFieldDelegate {
     }
 
     @objc private func dimensionsClicked() { onResizeButtonClicked(dimensionsButton) }
+
+    @objc private func orientClicked() {
+        let menu = NSMenu()
+        let entries: [(String, String, ImageOrientationStep)] = [
+            ("Rotate Left", "rotate.left", .rotateLeft),
+            ("Rotate Right", "rotate.right", .rotateRight),
+            ("Flip Horizontal", "arrow.left.and.right.righttriangle.left.righttriangle.right", .flipHorizontal),
+            ("Flip Vertical", "arrow.up.and.down.righttriangle.up.righttriangle.down", .flipVertical),
+        ]
+        for (index, (title, symbol, step)) in entries.enumerated() {
+            if index == 2 { menu.addItem(.separator()) }
+            let item = NSMenuItem(title: title, action: #selector(orientItemChosen(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = step
+            item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+            menu.addItem(item)
+        }
+        menu.addItem(.separator())
+        let reset = NSMenuItem(title: "Reset Orientation", action: #selector(resetOrientationChosen),
+                               keyEquivalent: "")
+        reset.target = self
+        reset.image = NSImage(systemSymbolName: "arrow.counterclockwise", accessibilityDescription: nil)
+        menu.autoenablesItems = false
+        reset.isEnabled = state?.orientation.isIdentity == false
+        menu.addItem(reset)
+        // Drop the menu just below the button.
+        let y = orientButton.isFlipped ? orientButton.bounds.height + 4 : -4
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: y), in: orientButton)
+    }
+
+    @objc private func resetOrientationChosen() { onResetOrientation() }
+
+    @objc private func orientItemChosen(_ item: NSMenuItem) {
+        guard let step = item.representedObject as? ImageOrientationStep else { return }
+        onOrientImage(step)
+    }
 
     /// Borderless chevron that collapses/shows the recent strip. Icon and
     /// tooltip are kept in sync with the strip state via `setStripHidden`.
@@ -698,6 +757,8 @@ final class EditorMetaRowView: NSView, NSTextFieldDelegate {
         percentLabel.isEditable = (zoom == nil)
         dimensionsButton.isEnabled = (zoom == nil)
         dimensionsButton.toolTip = zoom == nil ? "Resize image…" : "Resize applies to images"
+        orientButton.isEnabled = (zoom == nil)
+        orientButton.toolTip = zoom == nil ? "Rotate or flip image" : "Rotate and flip apply to images"
         refreshZoomDisplay()
     }
 

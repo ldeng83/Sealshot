@@ -197,5 +197,9 @@ func previewFocusGeometry(for url: URL,
     guard let manData = previewEntryData(url: url, entry: "manifest.json", crypto: crypto),
           let probe = try? JSONDecoder().decode(SourceSizeProbe.self, from: manData)
     else { return nil }
-    return (CGSize(width: probe.sourceSize.width, height: probe.sourceSize.height), focus)
+    // source.png keeps its original orientation; a quarter-turned document
+    // shows it transposed.
+    let size = CGSize(width: probe.sourceSize.width, height: probe.sourceSize.height)
+    let turned = decoded.orientation.quarterTurns % 2 == 1
+    return (turned ? CGSize(width: size.height, height: size.width) : size, focus)
 }

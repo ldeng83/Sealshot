@@ -211,14 +211,14 @@ final class AnnotationCodecTests: XCTestCase {
     // throws the typed error so the caller can surface "newer version" vs a
     // generic read failure — the fix for the stuck-strip-highlight bug.
     func testDecode_futureVersion_throwsUnsupportedVersion() {
-        // v13 is beyond the current v12 envelope — stands in for a package written
+        // v14 is beyond the current v13 envelope — stands in for a package written
         // by a newer build.
-        let json = #"{"annotations":[],"version":13}"#.data(using: .utf8)!
+        let json = #"{"annotations":[],"version":14}"#.data(using: .utf8)!
         XCTAssertThrowsError(try decodeAnnotations(from: json)) { error in
             guard case AnnotationCodecError.unsupportedVersion(let v) = error else {
                 return XCTFail("expected unsupportedVersion, got \(error)")
             }
-            XCTAssertEqual(v, 13)
+            XCTAssertEqual(v, 14)
         }
     }
 
