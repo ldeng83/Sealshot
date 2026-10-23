@@ -154,6 +154,47 @@ struct SealshotApp: App {
                 .disabled(!objectMenu.hasFlippableSelection || lock.isLocked)
             }
 
+            // Image ▸ whole-document orientation. ⌘L / ⌘R follow Preview
+            // (⌘⇧L / ⌘⇧R are capture shortcuts, so the plain pair is free).
+            CommandMenu("Image") {
+                Button("Rotate Left") {
+                    guard !lock.isLocked else { return }
+                    capture?.editor.orientImage(.rotateLeft)
+                }
+                .keyboardShortcut("l", modifiers: .command)
+                .disabled(!objectMenu.canOrientImage || lock.isLocked)
+
+                Button("Rotate Right") {
+                    guard !lock.isLocked else { return }
+                    capture?.editor.orientImage(.rotateRight)
+                }
+                .keyboardShortcut("r", modifiers: .command)
+                .disabled(!objectMenu.canOrientImage || lock.isLocked)
+
+                Divider()
+
+                Button("Flip Horizontal") {
+                    guard !lock.isLocked else { return }
+                    capture?.editor.orientImage(.flipHorizontal)
+                }
+                .disabled(!objectMenu.canOrientImage || lock.isLocked)
+
+                Button("Flip Vertical") {
+                    guard !lock.isLocked else { return }
+                    capture?.editor.orientImage(.flipVertical)
+                }
+                .disabled(!objectMenu.canOrientImage || lock.isLocked)
+
+                Divider()
+
+                // Orientation only — Revert to Original resets every edit.
+                Button("Reset Orientation") {
+                    guard !lock.isLocked else { return }
+                    capture?.editor.resetImageOrientation()
+                }
+                .disabled(!objectMenu.isImageOriented || lock.isLocked)
+            }
+
             // Capture & record. No key equivalents here — these actions have
             // their own user-customizable global shortcuts (KeyboardShortcuts);
             // duplicating them as menu shortcuts would fire twice when frontmost.

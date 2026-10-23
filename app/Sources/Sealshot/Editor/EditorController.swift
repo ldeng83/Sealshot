@@ -260,6 +260,9 @@ final class EditorController {
     /// Menu-bar Edit▸Flip; the canvas-focus guard lives in
     /// `EditorWindowController.flipSelection(horizontal:)`.
     func flipSelection(horizontal: Bool) { windowController?.flipSelection(horizontal: horizontal) }
+    /// Menu-bar Image ▸ Rotate / Flip → `EditorWindowController.applyImageOrientation(_:)`.
+    func orientImage(_ step: ImageOrientationStep) { windowController?.applyImageOrientation(step) }
+    func resetImageOrientation() { windowController?.resetImageOrientation() }
     func zoomActualSize() { windowController?.zoomActualSize() }
     func fitWindow() { windowController?.fitWindow() }
     func fitWidth() { windowController?.fitWidth() }
@@ -852,6 +855,10 @@ final class EditorController {
         // Document resize (v8): when set, `canvasImage` is the resampled base
         // and this holds the pristine source.png pixels for save/reset.
         var loadedPristine: CGImage? = nil
+        // Image ▸ Rotate / Flip (v13): source.png keeps its original pixels;
+        // the document works on them turned by this orientation.
+        var loadedOrientation: ImageOrientation = .identity
+        var loadedUnoriented: CGImage? = nil
         // Background-removal alternate base (`cutout.png`) + display flag.
         var loadedCutout: CGImage? = nil
         var loadedPlaceholder: CGImage? = nil
@@ -914,7 +921,16 @@ final class EditorController {
                 windowController?.presentOpenFailure(url: url, error: error)
                 return
             }
-            canvasImage = pkg.source
+            // Orientation first: the crop, the resize and every other stored
+            // coordinate live in the oriented space.
+            var source = pkg.source
+            if !pkg.orientation.isIdentity,
+               let oriented = ImageOrientationRenderer.apply(pkg.orientation, to: pkg.source) {
+                source = oriented
+                loadedOrientation = pkg.orientation
+                loadedUnoriented = pkg.source
+            }
+            canvasImage = source
             loadedAnnotations = pkg.annotations
             loadedCrop = pkg.crop
             loadedContentClip = pkg.contentClip
@@ -941,15 +957,15 @@ final class EditorController {
             // holds against a resampled base — drop it (regenerated on demand).
             if let target = pkg.resizedSize {
                 let pristineVisible = pkg.crop?.size
-                    ?? CGSize(width: pkg.source.width, height: pkg.source.height)
+                    ?? CGSize(width: source.width, height: source.height)
                 let fx = target.width / max(pristineVisible.width, 1)
                 let fy = target.height / max(pristineVisible.height, 1)
-                let fullTarget = CGSize(width: CGFloat(pkg.source.width) * fx,
-                                        height: CGFloat(pkg.source.height) * fy)
+                let fullTarget = CGSize(width: CGFloat(source.width) * fx,
+                                        height: CGFloat(source.height) * fy)
                 if fx > 0, fy > 0,
-                   let resampled = DocumentResampler.resample(pkg.source, to: fullTarget) {
+                   let resampled = DocumentResampler.resample(source, to: fullTarget) {
                     canvasImage = resampled
-                    loadedPristine = pkg.source
+                    loadedPristine = source
                     loadedCrop = pkg.crop.map {
                         CGRect(x: $0.minX * fx, y: $0.minY * fy,
                                width: $0.width * fx, height: $0.height * fy)
@@ -988,7 +1004,9 @@ final class EditorController {
             sourceURL: url,
             enhancedImage: loadedEnhanced,
             showingEnhanced: loadedShowingEnhanced,
-            pristineSource: loadedPristine
+            pristineSource: loadedPristine,
+            orientation: loadedOrientation,
+            unorientedSource: loadedUnoriented
         )
         newState.annotations = loadedAnnotations
         warnIfTextFontsMissing(in: loadedAnnotations)

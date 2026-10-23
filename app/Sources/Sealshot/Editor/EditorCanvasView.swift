@@ -3403,6 +3403,10 @@ final class EditorCanvasView: NSView {
     /// the same transition as the sidebar crop button. Falls back to a plain
     /// `state.commitCrop()` when unwired.
     var onCommitCrop: (() -> Void)?
+    /// Image ▸ Rotate / Flip from the context menu (the controller rebuilds
+    /// the document — the canvas can't swap its own state).
+    var onOrientImage: ((ImageOrientationStep) -> Void)?
+    var onResetOrientation: (() -> Void)?
     /// Discard all edits and revert to the pristine original (controller wires
     /// this to EditorWindowController.revertToOriginal).
     var onRevertToOriginal: (() -> Void)?
@@ -3539,6 +3543,11 @@ final class EditorCanvasView: NSView {
     }
 
     @objc private func flipHorizontal() { state.flipSelected(horizontal: true) }
+    @objc private func resetOrientationFromMenu() { onResetOrientation?() }
+    @objc private func orientImageFromMenu(_ item: NSMenuItem) {
+        guard let step = item.representedObject as? ImageOrientationStep else { return }
+        onOrientImage?(step)
+    }
     @objc private func flipVertical() { state.flipSelected(horizontal: false) }
     @objc private func deleteSelectedObjects() {
         state.deleteSelected()
@@ -3614,6 +3623,31 @@ final class EditorCanvasView: NSView {
         resetFocus.target = self
         resetFocus.isEnabled = focusEnabled
         menu.addItem(resetFocus)
+        // Whole-image orientation (same commands as the Image menu).
+        if !state.isReadOnly {
+            let orient = NSMenuItem(title: "Rotate & Flip Image", action: nil, keyEquivalent: "")
+            let sub = NSMenu()
+            for (title, step) in [("Rotate Left", ImageOrientationStep.rotateLeft),
+                                  ("Rotate Right", .rotateRight),
+                                  ("Flip Horizontal", .flipHorizontal),
+                                  ("Flip Vertical", .flipVertical)] {
+                if step == .flipHorizontal { sub.addItem(.separator()) }
+                let item = NSMenuItem(title: title, action: #selector(orientImageFromMenu(_:)),
+                                      keyEquivalent: "")
+                item.target = self
+                item.representedObject = step
+                sub.addItem(item)
+            }
+            sub.addItem(.separator())
+            let reset = NSMenuItem(title: "Reset Orientation", action: #selector(resetOrientationFromMenu),
+                                   keyEquivalent: "")
+            reset.target = self
+            sub.autoenablesItems = false
+            reset.isEnabled = !state.orientation.isIdentity
+            sub.addItem(reset)
+            orient.submenu = sub
+            menu.addItem(orient)
+        }
         // Revert everything to the pristine original (undoable for the session).
         let revert = NSMenuItem(title: "Revert to Original Image",
                                 action: #selector(revertToOriginalImage), keyEquivalent: "")

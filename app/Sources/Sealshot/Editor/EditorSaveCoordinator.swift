@@ -53,6 +53,9 @@ final class EditorSaveCoordinator {
         // stores); `resizedSize` is the resample target (nil = native).
         let persistCrop: CGRect?
         let resizedSize: CGSize?
+        /// Image ▸ Rotate / Flip: `source` is in its ORIGINAL orientation;
+        /// this is what turns it into the document's.
+        let orientation: ImageOrientation
         // Background-removal alternate base + display flag.
         let cutout: CGImage?
         let showingCutout: Bool
@@ -83,6 +86,7 @@ final class EditorSaveCoordinator {
             crypto: SealPackageCryptoContext.current(),
             persistCrop: state.persistedCroppedRect,
             resizedSize: state.resizedSize,
+            orientation: state.orientation,
             cutout: state.cutoutImage,
             showingCutout: state.showingCutout,
             backgroundFill: state.backgroundFill
@@ -118,6 +122,7 @@ final class EditorSaveCoordinator {
                 contentClip: s.contentClip,
                 focus: s.focus,
                 resizedSize: s.resizedSize,
+                orientation: s.orientation,
                 cutout: s.cutout,
                 showingCutout: s.showingCutout,
                 backgroundFill: s.backgroundFill,
@@ -163,6 +168,7 @@ final class EditorSaveCoordinator {
                 contentClip: state.contentClip,
                 focus: state.focusRect,
                 resizedSize: state.resizedSize,
+                orientation: state.orientation,
                 cutout: state.cutoutImage,
                 showingCutout: state.showingCutout,
                 backgroundFill: state.backgroundFill,

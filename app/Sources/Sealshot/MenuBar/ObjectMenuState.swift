@@ -14,8 +14,18 @@ final class ObjectMenuState: ObservableObject {
     /// The selection contains something that can mirror → Flip enabled.
     /// `EditorState.isFlippable` excludes only `.badge`; text mirrors fine.
     @Published private(set) var hasFlippableSelection = false
+    /// An editable image is open (not a video, not a Deleted-folder file) →
+    /// Image ▸ Rotate / Flip enabled.
+    @Published private(set) var canOrientImage = false
+    /// …and it is currently turned/mirrored → Image ▸ Reset Orientation enabled.
+    @Published private(set) var isImageOriented = false
 
     init() {}
+
+    func setCanOrientImage(_ value: Bool, isOriented: Bool) {
+        if canOrientImage != value { canOrientImage = value }
+        if isImageOriented != isOriented { isImageOriented = isOriented }
+    }
 
     func update(hasSelection: Bool, hasFlippableSelection: Bool) {
         // Republishing an equal value still notifies observers — skip.

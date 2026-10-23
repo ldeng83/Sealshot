@@ -32,6 +32,13 @@ private struct AnnotationsEnvelope: Codable {
     /// it is transparent, so a grown margin never reveals cropped-away source.
     /// nil = no grow (all pre-v11 files decode to nil via the optional key).
     var contentClip: CGRect?
+    /// v13: the document is turned/mirrored relative to `source.png` (Image ▸
+    /// Rotate / Flip), applied on open BEFORE the crop and any Resize. The
+    /// crop/annotations/focus — and `enhanced.png`/`cutout.png` — are stored
+    /// in the oriented space; only `source.png` keeps its original pixels.
+    /// nil = identity. Only rotated documents are written as v13, so builds
+    /// that predate it keep opening every other file.
+    var orientation: ImageOrientation?
 }
 
 /// Minimal probe that decodes only `version` so the reader can branch on the
@@ -131,17 +138,20 @@ internal func encodeAnnotations(
     focus: CGRect? = nil,
     resizedSize: CGSize? = nil,
     showingCutout: Bool = false,
-    backgroundFill: SerializableColor? = nil
+    backgroundFill: SerializableColor? = nil,
+    orientation: ImageOrientation = .identity
 ) throws -> Data {
     let envelope = AnnotationsEnvelope(
-        version: 12,  // v12 adds Style.textLayoutWidth (text mask model)
+        // v12 adds Style.textLayoutWidth (text mask model); v13 adds orientation.
+        version: orientation.isIdentity ? 12 : 13,
         annotations: annotations,
         croppedRect: crop,
         focusRect: focus,
         resizedSize: resizedSize,
         showingCutout: showingCutout ? true : nil,
         backgroundFill: backgroundFill,
-        contentClip: contentClip
+        contentClip: contentClip,
+        orientation: orientation.isIdentity ? nil : orientation
     )
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.sortedKeys]
@@ -157,28 +167,30 @@ internal func decodeAnnotations(
     from data: Data
 ) throws -> (annotations: [Annotation], crop: CGRect?, focus: CGRect?,
             resizedSize: CGSize?, showingCutout: Bool,
-            backgroundFill: SerializableColor?, contentClip: CGRect?) {
+            backgroundFill: SerializableColor?, contentClip: CGRect?,
+            orientation: ImageOrientation) {
     let decoder = JSONDecoder()
     let probe = try decoder.decode(VersionProbe.self, from: data)
     switch probe.version {
-    case 3, 4, 5, 6, 7, 8, 9, 10, 11, 12:
-        // v3–v12 share the current envelope shape.
+    case 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13:
+        // v3–v13 share the current envelope shape.
         // v5 adds .image geometry; v6 adds per-annotation transform (rotation/flip);
         // v7 adds .cut (transparent hole) geometry; v8 adds resizedSize; v9 adds
         // backgroundFill; v10 adds .penArrow geometry; v11 adds contentClip; v12
-        // adds Style.textLayoutWidth (all new fields/Geometry cases decode via
+        // adds Style.textLayoutWidth; v13 adds orientation (all new fields/Geometry cases decode via
         // synthesized/custom Codable — optional keys absent on older files).
         // Annotations lacking a "transform" key decode to identity via custom init(from:).
         let envelope = try decoder.decode(AnnotationsEnvelope.self, from: data)
         return (envelope.annotations, envelope.croppedRect, envelope.focusRect,
                 envelope.resizedSize, envelope.showingCutout ?? false,
-                envelope.backgroundFill, envelope.contentClip)
+                envelope.backgroundFill, envelope.contentClip,
+                envelope.orientation ?? .identity)
     case 2:
         let v2 = try decoder.decode(V2Envelope.self, from: data)
-        return (v2.annotations.map(migrateV2), v2.croppedRect, nil, nil, false, nil, nil)
+        return (v2.annotations.map(migrateV2), v2.croppedRect, nil, nil, false, nil, nil, .identity)
     case 1:
         let legacy = try decoder.decode(LegacyEnvelope.self, from: data)
-        return (legacy.annotations.map(migrate), legacy.croppedRect, nil, nil, false, nil, nil)
+        return (legacy.annotations.map(migrate), legacy.croppedRect, nil, nil, false, nil, nil, .identity)
 
     default:
         throw AnnotationCodecError.unsupportedVersion(probe.version)

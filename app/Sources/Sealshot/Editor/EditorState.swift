@@ -78,6 +78,11 @@ struct EditorSnapshot: Equatable, Codable {
     /// controller orchestrates that rebuild), then applies the snapshot
     /// verbatim. nil (pre-field histories) = same size as current.
     var sourceImageSize: CGSize? = nil
+    /// The document orientation at checkpoint time (Image ▸ Rotate / Flip). A
+    /// different orientation takes the same rebuild path as a different size —
+    /// a 180° turn or a flip keeps the size, so size alone can't tell. nil
+    /// (pre-field histories) = identity.
+    var orientation: ImageOrientation? = nil
     /// PRE-edit metadata trio for steps minted by a metadata edit (rename /
     /// summary / tags); nil on every other step means "leave the manifest
     /// alone". Optional for pre-existing persisted histories.
@@ -1185,14 +1190,29 @@ final class EditorState {
 
     init(sourceImage: CGImage, sourceURL: URL?,
          enhancedImage: CGImage? = nil, showingEnhanced: Bool = false,
-         pristineSource: CGImage? = nil) {
+         pristineSource: CGImage? = nil,
+         orientation: ImageOrientation = .identity, unorientedSource: CGImage? = nil) {
         self.sourceImage = sourceImage
         self.sourceURL = sourceURL
         self.enhancedImage = enhancedImage
         self.showingEnhanced = showingEnhanced
         self.pristineSource = pristineSource
+        self.orientation = orientation
+        self.unorientedSource = orientation.isIdentity ? nil : unorientedSource
         loadTextTypography()
     }
+
+    // MARK: - Document orientation (Image ▸ Rotate / Flip)
+
+    /// How the document is turned/mirrored relative to `source.png`.
+    /// `sourceImage`, `pristineSource` and every bitmap and coordinate in the
+    /// state are already in this orientation; only `source.png` is not.
+    let orientation: ImageOrientation
+
+    /// `source.png`'s pixels while the orientation isn't identity (nil = the
+    /// pristine image already IS `source.png`). Saves write this, so the
+    /// original is never rewritten and Revert to Original undoes a rotation.
+    let unorientedSource: CGImage?
 
     // MARK: - Document resize (Resize popover)
 
@@ -1227,8 +1247,12 @@ final class EditorState {
                       width: crop.width / f.x, height: crop.height / f.y)
     }
 
-    /// The image written to `source.png` — always the pristine pixels.
-    var persistedSourceImage: CGImage { pristineSource ?? sourceImage }
+    /// The image written to `source.png` — always the pristine pixels, in
+    /// their original orientation.
+    var persistedSourceImage: CGImage { unorientedSource ?? pristineSource ?? sourceImage }
+
+    /// The pristine pixels in the CURRENT orientation (what Resize resamples).
+    var orientedPristine: CGImage { pristineSource ?? sourceImage }
 
     /// True when any edit is layered on the pristine original — drives the
     /// "Revert to Original Image" command's enabled state. Tool-creation
@@ -1239,6 +1263,7 @@ final class EditorState {
             || showingCutout || cutoutImage != nil
             || backgroundFill != nil
             || resizedSize != nil || pristineSource != nil
+            || !orientation.isIdentity
             || !imageAssets.isEmpty
     }
 
@@ -1286,7 +1311,7 @@ final class EditorState {
     /// size (crop honored, expressed in pristine pixels).
     var pristineVisibleSize: CGSize {
         if let crop = persistedCroppedRect { return crop.size }
-        let pristine = pristineSource ?? sourceImage
+        let pristine = orientedPristine
         return CGSize(width: pristine.width, height: pristine.height)
     }
 
@@ -1307,6 +1332,7 @@ final class EditorState {
             showingEnhanced: showingEnhanced,
             zoom: zoom,
             sourceImageSize: CGSize(width: sourceImage.width, height: sourceImage.height),
+            orientation: orientation.isIdentity ? nil : orientation,
             metadata: metadata
         )
     }
@@ -1412,6 +1438,7 @@ final class EditorState {
     /// controller must rebuild the document at the snapshot's size before
     /// applying it (`restoreAcrossResize`).
     func snapshotRequiresRebuild(_ snapshot: EditorSnapshot) -> Bool {
+        if (snapshot.orientation ?? .identity) != orientation { return true }
         guard let size = snapshot.sourceImageSize else { return false }
         return Int(size.width) != sourceImage.width
             || Int(size.height) != sourceImage.height

@@ -20,6 +20,10 @@ struct SealPackageContents {
     /// crop). `source` stays pristine at its captured size; annotations and
     /// focus are stored in resized space, `crop` in pristine-source space.
     let resizedSize: CGSize?
+    /// v13: how the document is turned/mirrored relative to `source` (which
+    /// keeps its original pixels). Applied on open, before the crop/resize;
+    /// everything else here is already in the oriented space.
+    var orientation: ImageOrientation = .identity
     /// Background-removed alternate base (`cutout.png`) + whether it's shown.
     let cutout: CGImage?
     let showingCutout: Bool
@@ -160,6 +164,7 @@ func writeSealPackage(
     contentClip: CGRect? = nil,
     focus: CGRect? = nil,
     resizedSize: CGSize? = nil,
+    orientation: ImageOrientation = .identity,
     cutout: CGImage? = nil,
     showingCutout: Bool = false,
     backgroundFill: SerializableColor? = nil,
@@ -241,7 +246,8 @@ func writeSealPackage(
                                                 focus: focus,
                                                 resizedSize: resizedSize,
                                                 showingCutout: showingCutout && cutout != nil,
-                                                backgroundFill: backgroundFill)
+                                                backgroundFill: backgroundFill,
+                                                orientation: orientation)
     let sourcePNG = try pngData(from: source)
     let compositePNG = try pngData(from: composite)
     // Hoist optional PNGs so we can put them in the entry map before sealing.
@@ -453,6 +459,7 @@ func readSealPackage(
         contentClip: decodedAnnotations.contentClip,
         focus: decodedAnnotations.focus,
         resizedSize: decodedAnnotations.resizedSize,
+        orientation: decodedAnnotations.orientation,
         cutout: cutout,
         showingCutout: decodedAnnotations.showingCutout && cutout != nil,
         backgroundFill: decodedAnnotations.backgroundFill,

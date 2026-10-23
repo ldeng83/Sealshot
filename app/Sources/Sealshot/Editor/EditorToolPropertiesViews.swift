@@ -1137,7 +1137,7 @@ enum EditorToolPropertiesViews {
         // While a document Resize is active, keep the pristine captured size
         // visible right under the working dimensions.
         if state.pristineSource != nil {
-            let original = state.persistedSourceImage
+            let original = state.orientedPristine   // as it stands, turned with the document
             stack.addArrangedSubview(detailRow("Original size",
                                                "\(original.width) × \(original.height)"))
         }
