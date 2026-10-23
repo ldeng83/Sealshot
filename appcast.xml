@@ -4,6 +4,34 @@
     <title>Sealshot</title>
     <!-- newest items first -->
     <item>
+      <title>0.8.3</title>
+      <pubDate>Fri, 23 Oct 2026 01:37:55 +0000</pubDate>
+      <sparkle:version>26</sparkle:version>
+      <sparkle:shortVersionString>0.8.3</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h2>New</h2>
+<ul>
+<li><b>Rotate and flip the whole image.</b> Image ▸ Rotate Left (⌘L), Rotate Right (⌘R), Flip Horizontal, Flip Vertical and Reset Orientation — also on a button beside the size readout and in the canvas's right-click menu. Your marks turn with the image and land on the same spots; text and steps move with it but stay upright and readable. It never touches the original pixels: Reset Orientation or Revert to Original brings the image back as it was, and each turn or flip is one undo step. A rotated or flipped capture needs Sealshot 0.8.3 or later to open.</li>
+</ul>
+<h2>Improvements</h2>
+<ul>
+<li><b>Steps are sized for the image you're on.</b> A new image starts with a step size that suits its resolution instead of one fixed size that looked tiny on a large Retina capture, and the Size slider goes much higher on big images. Whatever size you last set — with the slider, by dragging a step's handle, or by drawing a step out — is the size of the next one in that image. While you drag a step's handle the Size slider moves with it, and the handle stops where the slider does.</li>
+</ul>
+<h2>Fixes</h2>
+<ul>
+<li><b>Live Text copies one column at a time.</b> On a page with columns or a sidebar, selecting text down one column also grabbed the lines beside it, and the copied text came out interleaved. Live Text now reads each block of text on its own, so a selection or copy stays where you made it.</li>
+<li><b>Live Text reads a capital O in codes.</b> Order numbers, license keys and other codes with a letter O next to digits were read with a zero — "O-1042" came out as "0-1042". Live Text now looks at the letter's shape and gets it right.</li>
+<li><b>Double-click highlights the whole word.</b> The highlight on a double-clicked word in Live Text could stop a letter short or spill one letter over, even though the copied text was right. It now covers the word exactly.</li>
+<li><b>Fit Width keeps your place.</b> Choosing Fit Width on a tall capture jumped to the middle of the image; it now keeps the part you were looking at. Fit Height does the same on a wide one.</li>
+<li><b>A new capture opens the editor even after you closed it.</b> Closing the Sealshot window used to keep it closed for every capture afterwards. Taking a capture now opens it on the new shot.</li>
+<li><b>Resize a text box while you're typing in it.</b> The handles around a text box you're typing in now work: drag one to rewrap the text, and keep typing. Pressing Esc while typing now finishes the text and deselects it, like the other tools.</li>
+<li><b>Sealshot always opens a window.</b> If the capture you last had open couldn't be read, Sealshot launched with no window and no message. It now opens the window and tells you which capture couldn't be opened.</li>
+</ul>
+      ]]></description>
+      <enclosure url="https://github.com/ldeng83/Sealshot/releases/download/v0.8.3/Sealshot-0.8.3.zip" sparkle:edSignature="I+3IYeaeHVJ7IZP3kx7jIxAuEiW7nJ9s/SVkYUg7R5qMZjyIq0msE6pT58pLyE9x+EAIJJfBI4ze2TyM05cKBQ==" length="69589959" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>0.8.2</title>
       <pubDate>Fri, 04 Sep 2026 21:39:35 +0000</pubDate>
       <sparkle:version>25</sparkle:version>
