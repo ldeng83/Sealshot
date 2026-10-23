@@ -346,7 +346,8 @@ private func recognizeLines(in image: CGImage) -> [(line: RecognizedLine, conf: 
     var out: [(line: RecognizedLine, conf: Float)] = []
     for obs in observations {
         guard let candidate = obs.topCandidates(1).first else { continue }
-        let string = foldStrayFullwidth(candidate.string)
+        let string = disambiguateRoundGlyphs(foldStrayFullwidth(candidate.string),
+                                             candidate: candidate, image: image)
         guard !string.isEmpty else { continue }
 
         // Character boxes use validated Vision token geometry, subdividing only
@@ -927,7 +928,8 @@ private func reocrCandidates(_ image: CGImage) -> [(String, Float)] {
     else { return [] }
     return ((request.results ?? []) as [VNRecognizedTextObservation]).compactMap { obs in
         guard let c = obs.topCandidates(1).first, !c.string.isEmpty else { return nil }
-        return (foldStrayFullwidth(c.string), c.confidence)
+        return (disambiguateRoundGlyphs(foldStrayFullwidth(c.string), candidate: c, image: image),
+                c.confidence)
     }
 }
 
