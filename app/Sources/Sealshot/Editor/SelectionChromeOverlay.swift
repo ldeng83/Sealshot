@@ -55,6 +55,9 @@ final class SelectionChromeOverlay: NSView {
     private enum HandleDrag {
         case resizing(handle: AnnotationHandle, original: Geometry, id: UUID)
         case rotating(id: UUID, center: CGPoint, startAngle: CGFloat, startTransform: AnnotationTransform)
+        /// The box open in the inline text editor (not an annotation yet, or
+        /// hidden while re-edited); the canvas owns its rect.
+        case resizingEditingText(handle: AnnotationHandle, original: CGRect)
     }
     private var handleDrag: HandleDrag?
     private var liveRotationBadge: (point: CGPoint, degrees: CGFloat)?   // image-space point
@@ -144,6 +147,8 @@ final class SelectionChromeOverlay: NSView {
         // Search owns the toolbar/sidebar.
         if state.showsImageTextSearchPanel { return nil }
         // Priority, top to bottom:
+        //   0. the resize dots of the box being typed (a click anywhere else
+        //      on the canvas commits the edit, so these must win),
         //   1. a selected object's resize/rotate handles,
         //   2. the crop tool's own anchors (no object is selected in crop),
         //   3. an EXPLICIT focus area's brackets/edge ticks,
@@ -157,6 +162,7 @@ final class SelectionChromeOverlay: NSView {
         // grab dragged the layer instead). The FULL-IMAGE viewfinder (no
         // focus rect set) stays BELOW bodies: its anchors live on the canvas
         // edges/corners, and an object straddling an edge must stay grabbable.
+        if editingTextHandleHit(p) != nil { return self }
         if selectedHandleHit(p) != nil { return self }
         if cropHit(at: p) != nil { return self }
         if state.focusRect != nil, focusViewfinderHit(at: p) != nil { return self }
@@ -221,6 +227,25 @@ final class SelectionChromeOverlay: NSView {
         return handles
     }
 
+    /// Screen-space positions of the 8 resize dots the canvas draws around the
+    /// box being typed (`drawTextBoxChrome`: corners + edge midpoints, no
+    /// rotate — the inline editor is never rotated). Empty when not typing.
+    private func editingTextHandles() -> [(AnnotationHandle, CGPoint)] {
+        guard let r = state.editingTextBoxRect else { return [] }
+        let proj = currentProjection()
+        let points: [(AnnotationHandle, CGPoint)] = [
+            (.topLeft, CGPoint(x: r.minX, y: r.minY)), (.top, CGPoint(x: r.midX, y: r.minY)),
+            (.topRight, CGPoint(x: r.maxX, y: r.minY)), (.left, CGPoint(x: r.minX, y: r.midY)),
+            (.right, CGPoint(x: r.maxX, y: r.midY)), (.bottomLeft, CGPoint(x: r.minX, y: r.maxY)),
+            (.bottom, CGPoint(x: r.midX, y: r.maxY)), (.bottomRight, CGPoint(x: r.maxX, y: r.maxY)),
+        ]
+        return points.map { ($0.0, proj.screen(fromImage: $0.1)) }
+    }
+
+    private func editingTextHandleHit(_ p: CGPoint) -> AnnotationHandle? {
+        hitTestHandlePositions(editingTextHandles(), at: p, handleSize: 12)
+    }
+
     /// Hit-test `p` (screen space) against the SELECTED object's visibly-drawn
     /// resize/rotate handles. Highest priority, so a selected object near the
     /// canvas edge can be resized where its handles overlap the focus viewfinder.
@@ -255,6 +280,13 @@ final class SelectionChromeOverlay: NSView {
         let p = convert(event.locationInWindow, from: nil)
         // Same priority as hitTest. A body click passed through (hitTest returned
         // nil) and is handled by the canvas, so it never reaches here.
+        // The overlay never takes first responder, so the text view keeps the
+        // caret through the drag.
+        if let handle = editingTextHandleHit(p), let rect = state.editingTextBoxRect {
+            handleDrag = .resizingEditingText(handle: handle, original: rect)
+            state.interactionInProgress = true
+            return
+        }
         if let (id, handle) = selectedHandleHit(p) {
             beginHandleDrag(id: id, handle: handle, at: p)
             return
@@ -363,6 +395,11 @@ final class SelectionChromeOverlay: NSView {
                 state.annotations[idx].transform.rotationDegrees = normalized
             }
             liveRotationBadge = (point: current, degrees: normalized)
+        case let .resizingEditingText(handle, original):
+            guard case let .text(proposed, _) = resizeGeometry(.text(rect: original, runs: []),
+                                                               handle: handle, to: current) else { return }
+            let keepBottom = [AnnotationHandle.topLeft, .top, .topRight].contains(handle)
+            canvas?.resizeEditingTextBox(to: proposed, keepBottom: keepBottom)
         }
         needsDisplay = true
     }
@@ -432,6 +469,10 @@ final class SelectionChromeOverlay: NSView {
         if !currentViewportRect().contains(p) { NSCursor.arrow.set(); setHover(nil); return }
         // Mirror hitTest's priority so the cursor previews the action that a click
         // would actually perform.
+        // 0) Resize dot of the box being typed.
+        if let handle = editingTextHandleHit(p) {
+            EditorCanvasView.resizeCursor(for: handle).set(); setHover(nil); return
+        }
         // 1) Selected object's resize/rotate handle.
         if let (id, handle) = selectedHandleHit(p) {
             EditorCanvasView.resizeCursor(for: handle).set(); setHover(id); return
@@ -532,7 +573,7 @@ final class SelectionChromeOverlay: NSView {
             _ = state.focusWorkingRect; _ = state.selectedTool
             _ = state.sidebarPanelMode
             _ = state.marqueeRect; _ = state.hoveredAnnotationID; _ = state.primarySelectionID
-            _ = state.editingAnnotationID
+            _ = state.editingAnnotationID; _ = state.editingTextBoxRect
         } onChange: { [weak self] in
             Task { @MainActor in
                 guard let self, gen == self.observationGeneration else { return }

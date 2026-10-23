@@ -2284,7 +2284,7 @@ final class EditorCanvasView: NSView {
     /// Start an inline edit session over `rect` (image space). `existingID` is
     /// nil for a freshly drawn box, or the id of an existing text box being
     /// re-edited (which is hidden from the draw loop while editing).
-    private func beginTextEditing(rect: CGRect, existingID: UUID?, initialRuns: [TextRun], style: Style) {
+    func beginTextEditing(rect: CGRect, existingID: UUID?, initialRuns: [TextRun], style: Style) {
         commitTextEditing()   // close any prior session first
         let editor = InlineTextEditor()
         inlineEditor = editor
@@ -2328,6 +2328,7 @@ final class EditorCanvasView: NSView {
             editor.updateScale(scale, wrapWidth: editingLayoutWidth * scale)
             editor.textView.frame = frame
         }
+        state.editingTextBoxRect = rect
     }
 
     private func handleEditingTextChanged() {
@@ -2349,6 +2350,30 @@ final class EditorCanvasView: NSView {
                                 width: editingLayoutWidth, height: grown.rect.height)
         editor.textView.frame = viewRect(forImageRect: layoutRect, scale: scale,
                                          origin: imageDrawRect().origin)
+        state.editingTextBoxRect = grown.rect
+        needsDisplay = true
+    }
+
+    /// Apply a resize-handle drag on the box being typed (driven by
+    /// SelectionChromeOverlay, which hit-tests the dots `drawTextBoxChrome`
+    /// paints). The live box REWRAPS: the layout width follows the dragged
+    /// width, and the height can't drop below the wrapped text. The text view
+    /// keeps focus, so typing continues after the drag; no undo checkpoint —
+    /// the whole edit still commits as one.
+    func resizeEditingTextBox(to proposed: CGRect, keepBottom: Bool) {
+        guard let editor = inlineEditor, editingBoxRect != nil else { return }
+        let runs = editor.currentRuns
+        let measured = runs.isEmpty ? [creationRun(" ", style: editingStyle ?? creationTextStyle())] : runs
+        let rect = TextBoxSizer.resizedWhileEditing(
+            runs: measured, lineSpacing: editor.lineSpacing,
+            proposed: proposed, keepBottom: keepBottom)
+        editingBoxRect = rect
+        editingLayoutWidth = rect.width
+        editingRectFollowsWidth = true
+        let scale = currentScale()
+        editor.updateScale(scale, wrapWidth: rect.width * scale)
+        editor.textView.frame = viewRect(forImageRect: rect, scale: scale, origin: imageDrawRect().origin)
+        state.editingTextBoxRect = rect
         needsDisplay = true
     }
 
@@ -2377,11 +2402,15 @@ final class EditorCanvasView: NSView {
         // typed (an empty box has no runs).
         rememberTextCreationDefaults(run: runs.last ?? editor.currentTypingRun, boxStyle: finalStyle)
 
-        // Tear down the overlay first.
-        editor.textView.removeFromSuperview()
+        // Tear down the overlay first. Hand focus back to the canvas BEFORE
+        // removing the text view: removing the first responder makes the
+        // WINDOW first responder, so the canvas never saw the next key (Esc →
+        // Info did nothing after an Esc commit).
         if window?.firstResponder == editor.textView { window?.makeFirstResponder(self) }
+        editor.textView.removeFromSuperview()
         inlineEditor = nil
         editingBoxRect = nil
+        state.editingTextBoxRect = nil
         editingStyle = nil
         editingLayoutWidth = 0
         editingRectFollowsWidth = true
@@ -2458,9 +2487,13 @@ final class EditorCanvasView: NSView {
     /// text view handles them normally via keyDown.
     func handleKeyWhileEditingText(_ event: NSEvent) -> Bool {
         guard let editor = inlineEditor else { return false }
-        // Esc commits.
+        // Esc commits AND deselects — the end state one Esc gives a just-drawn
+        // shape (whose drawing ends on mouse-up, already selected). Leaving the
+        // box selected cost the Text tool an extra Esc no other tool needs.
         if event.keyCode == 53 {
-            commitTextEditing()
+            commitTextEditing(reselect: false)
+            state.clearSelection()
+            needsDisplay = true
             return true
         }
         guard event.modifierFlags.contains(.command) else { return false }
