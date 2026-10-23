@@ -47,6 +47,20 @@ struct ImageOrientation: Codable, Equatable {
     static let identity = ImageOrientation()
     var isIdentity: Bool { quarterTurns == 0 && !mirrored }
 
+    init(quarterTurns: Int = 0, mirrored: Bool = false) {
+        self.quarterTurns = ((quarterTurns % 4) + 4) % 4
+        self.mirrored = mirrored
+    }
+
+    /// Decoded values come from a file that may have been shared with the
+    /// user, so `quarterTurns` is brought into 0...3: a negative count would
+    /// trap in `steps`, and a huge one would turn the image millions of times.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(quarterTurns: try c.decodeIfPresent(Int.self, forKey: .quarterTurns) ?? 0,
+                  mirrored: try c.decodeIfPresent(Bool.self, forKey: .mirrored) ?? false)
+    }
+
     /// This orientation followed by `step`.
     func then(_ step: ImageOrientationStep) -> ImageOrientation {
         switch step {

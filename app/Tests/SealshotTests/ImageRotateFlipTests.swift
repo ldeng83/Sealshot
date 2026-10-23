@@ -347,6 +347,17 @@ final class ImageRotateFlipTests: XCTestCase {
         XCTAssertEqual(try decodeAnnotations(from: turned).orientation, o)
     }
 
+    /// A crafted annotations.json must not crash or stall the open: turns are
+    /// normalized into 0...3 on decode.
+    func testDecodingNormalizesOutOfRangeTurns() throws {
+        for (raw, expected) in [(-1, 3), (5, 1), (Int.max, 3), (Int.min, 0)] {
+            let json = #"{"version":13,"annotations":[],"orientation":{"quarterTurns":\#(raw),"mirrored":false}}"#
+            let decoded = try decodeAnnotations(from: Data(json.utf8)).orientation
+            XCTAssertEqual(decoded.quarterTurns, expected, "\(raw)")
+            XCTAssertEqual(decoded.steps.count, expected)
+        }
+    }
+
     func testPackageRoundTripKeepsOriginalSourceAndOrientation() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("ImageRotateFlip-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
