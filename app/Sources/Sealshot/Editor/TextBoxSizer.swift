@@ -53,6 +53,22 @@ enum TextBoxSizer {
         return Result(rect: rect, layoutWidth: max(width, rect.width))
     }
 
+    /// Box rect after a resize-handle drag WHILE TYPING. Unlike a committed box
+    /// (mask model), the live box rewraps to the dragged width, and its height
+    /// never drops below what the wrapped text needs — typing never hides
+    /// text. `keepBottom` pins the bottom edge when a top handle was dragged,
+    /// so the height clamp doesn't make the box slide down.
+    static func resizedWhileEditing(runs: [TextRun], lineSpacing: CGFloat,
+                                    proposed: CGRect, keepBottom: Bool) -> CGRect {
+        let needed = ceil(textBoxHeight(runs: runs, width: max(1, proposed.width - 2 * textBoxHPadding),
+                                        lineSpacing: lineSpacing))
+        guard needed > proposed.height else { return proposed }
+        var rect = proposed
+        rect.size.height = needed
+        if keepBottom { rect.origin.y = proposed.maxY - needed }
+        return rect
+    }
+
     /// Rect for a NEW text box. Click: one character cell of the creation
     /// font (the box then grows with typing). Drag: exactly the dragged box
     /// (min 40×one line) — its height is the wrap capacity.

@@ -221,4 +221,34 @@ final class TextBoxSizerTests: XCTestCase {
                 textBoxHeight(runs: newRuns, width: 200) - 0.5, "…enough to avoid clipping")
         } else { XCTFail("geometry changed kind") }
     }
+
+    // MARK: - Resize while typing
+
+    func testResizeWhileEditing_tallEnough_keepsProposedRect() {
+        let proposed = CGRect(x: 10, y: 20, width: 300, height: 200)
+        let r = TextBoxSizer.resizedWhileEditing(runs: [run("hello")], lineSpacing: 0,
+                                                 proposed: proposed, keepBottom: false)
+        XCTAssertEqual(r, proposed, "room to spare: the drag result is used as-is")
+    }
+
+    func testResizeWhileEditing_narrowing_growsHeightToFitRewrappedText() {
+        let runs = [run("the quick brown fox jumps over the lazy dog")]
+        let proposed = CGRect(x: 10, y: 20, width: 80, height: oneLineHeight())
+        let r = TextBoxSizer.resizedWhileEditing(runs: runs, lineSpacing: 0,
+                                                 proposed: proposed, keepBottom: false)
+        XCTAssertEqual(r.width, 80, "width follows the drag (text rewraps)")
+        XCTAssertEqual(r.minY, 20, "bottom-handle drag keeps the top edge")
+        XCTAssertGreaterThan(r.height, oneLineHeight() * 2, "height grows so no wrapped line is hidden")
+        XCTAssertGreaterThanOrEqual(r.height,
+            textBoxHeight(runs: runs, width: 80 - 2 * textBoxHPadding) - 0.5)
+    }
+
+    func testResizeWhileEditing_topHandleClamp_keepsBottomEdge() {
+        let runs = [run("line one\nline two\nline three")]
+        let proposed = CGRect(x: 0, y: 100, width: 300, height: 5)   // dragged top edge down too far
+        let r = TextBoxSizer.resizedWhileEditing(runs: runs, lineSpacing: 0,
+                                                 proposed: proposed, keepBottom: true)
+        XCTAssertEqual(r.maxY, proposed.maxY, accuracy: 0.001, "the fixed bottom edge stays put")
+        XCTAssertGreaterThan(r.height, oneLineHeight() * 2.5, "three hard lines stay visible")
+    }
 }

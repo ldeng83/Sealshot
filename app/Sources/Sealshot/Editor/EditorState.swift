@@ -621,6 +621,11 @@ final class EditorState {
     /// fill + overlay handles) skips it so editing is not obscured.
     var editingAnnotationID: UUID? = nil
 
+    /// Image-space rect of the box open in the inline text editor (new or
+    /// re-edited), nil when not typing. Published by the canvas so
+    /// SelectionChromeOverlay can make the box's resize dots draggable.
+    var editingTextBoxRect: CGRect? = nil
+
     /// Objects whose row is expanded in the Select-tool layers list. Transient
     /// UI state — observed by the sidebar so toggling rebuilds the panel, but
     /// NOT part of `EditorSnapshot` (never on the undo/redo stacks). Stale ids
