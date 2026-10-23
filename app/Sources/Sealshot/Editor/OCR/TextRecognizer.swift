@@ -274,15 +274,8 @@ private func refineAndOrder(_ base: OCRBase, source image: CGImage,
     try refineLowConfidenceLines(&lines, confidences: confidences, source: image,
                                  limits: refinement)
 
-    // Reading order: rows top-first, then left-to-right within a row. Snap the
-    // top edge to a 1%-of-image-height grid so lines on the same visual row
-    // share a key — this keeps the comparator a valid strict-weak ordering
-    // (a raw `abs(...) < tolerance` band is non-transitive → undefined sort).
-    func rowKey(_ r: CGRect) -> CGFloat { (r.minY / 0.01).rounded() * 0.01 }
-    lines.sort { a, b in
-        let ka = rowKey(a.box), kb = rowKey(b.box)
-        return ka != kb ? ka < kb : a.box.minX < b.box.minX
-    }
+    // Reading order, block by block — see `blockReadingOrder`.
+    lines = RecognizedTextLayout.blockReadingOrder(lines)
     let elapsed = ContinuousClock.now - started
     let ms = Double(elapsed.components.seconds) * 1000 + Double(elapsed.components.attoseconds) / 1.0e15
     // `.accurate` Vision recognition is Neural-Engine-accelerated on Apple

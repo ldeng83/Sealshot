@@ -170,7 +170,9 @@ struct TextLayoutSection: Equatable {
             anchor: wire.anchor, base: wire.base,
             crop: wire.crop.map { unflattenRect($0) },
             width: wire.width, height: wire.height,
-            layout: RecognizedTextLayout(lines: lines))
+            // Re-ordered on load: layouts saved before block ordering are in
+            // plain row order, and ordering is cheap next to re-recognizing.
+            layout: RecognizedTextLayout(lines: RecognizedTextLayout.blockReadingOrder(lines)))
     }
 
     private static func flatten(_ r: CGRect) -> [Float] {
