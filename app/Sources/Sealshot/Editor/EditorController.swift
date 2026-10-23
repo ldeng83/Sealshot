@@ -794,6 +794,16 @@ final class EditorController {
     /// When a window is already on-screen, the window's frame is preserved
     /// across the switch — only the canvas content is swapped. This avoids
     /// the layout jump that would otherwise happen on every thumbnail click.
+    /// Explain a capture that couldn't be opened. With no editor window yet —
+    /// launch, or a Dock click reopening the remembered capture — open an empty
+    /// one first: the failure used to go to a nil controller, which left the app
+    /// running with no window and no message (a capture saved by a newer build
+    /// made every launch look dead).
+    private func presentOpenFailure(url: URL, error: Error) {
+        if windowController == nil { presentEmpty() }
+        windowController?.presentOpenFailure(url: url, error: error)
+    }
+
     func presentFile(_ url: URL) {
         WindowDiag.note("presentFile: \(url.lastPathComponent)")
         defer { WindowDiag.windows("end of presentFile") }
@@ -891,7 +901,7 @@ final class EditorController {
                        log: log, type: .error, url.path, String(describing: error))
                 // Don't leave a silent no-op with a desynced strip highlight —
                 // restore the strip to the still-open file and explain why.
-                windowController?.presentOpenFailure(url: url, error: error)
+                presentOpenFailure(url: url, error: error)
                 return
             }
             canvasImage = pkg.source
@@ -951,7 +961,7 @@ final class EditorController {
                        log: log, type: .error, url.path, String(describing: error))
                 // Same recovery as the .seal path — restore the strip highlight
                 // and explain, instead of a silent no-op.
-                windowController?.presentOpenFailure(url: url, error: error)
+                presentOpenFailure(url: url, error: error)
                 return
             }
             canvasImage = pkg.source ?? pkg.composite
