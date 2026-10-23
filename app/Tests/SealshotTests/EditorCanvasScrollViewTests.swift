@@ -183,6 +183,43 @@ final class EditorCanvasScrollViewTests: XCTestCase {
         XCTAssertEqual(documentHeight, 800 - 15, accuracy: 1.0)
     }
 
+    func test_fitGlideTarget_fitWidthKeepsVerticalPosition() {
+        // A tall capture scrolled near its top: Fit Width rescales but must not
+        // jump to the document's vertical middle — the visible centre's Y stays.
+        let doc = CGRect(x: 0, y: 0, width: 1032, height: 4032)
+        let visible = CGRect(x: 100, y: 200, width: 800, height: 600)
+        let target = EditorCanvasScrollView.fitGlideTarget(
+            documentFrame: doc, visibleRect: visible,
+            viewportSize: CGSize(width: 800, height: 600), zoom: 0.5,
+            keepingAxis: .vertical)
+        XCTAssertEqual(target.size.width, 1600, accuracy: 0.001)
+        XCTAssertEqual(target.size.height, 1200, accuracy: 0.001)
+        XCTAssertEqual(target.midY, visible.midY, accuracy: 0.001, "vertical position kept")
+        XCTAssertEqual(target.midX, doc.midX, accuracy: 0.001, "horizontal still centred")
+    }
+
+    func test_fitGlideTarget_fitHeightKeepsHorizontalPosition() {
+        let doc = CGRect(x: 0, y: 0, width: 4032, height: 1032)
+        let visible = CGRect(x: 300, y: 50, width: 800, height: 600)
+        let target = EditorCanvasScrollView.fitGlideTarget(
+            documentFrame: doc, visibleRect: visible,
+            viewportSize: CGSize(width: 800, height: 600), zoom: 0.5,
+            keepingAxis: .horizontal)
+        XCTAssertEqual(target.midX, visible.midX, accuracy: 0.001, "horizontal position kept")
+        XCTAssertEqual(target.midY, doc.midY, accuracy: 0.001, "vertical still centred")
+    }
+
+    func test_fitGlideTarget_wholeFitCentresBothAxes() {
+        let doc = CGRect(x: 0, y: 0, width: 1032, height: 832)
+        let visible = CGRect(x: 300, y: 200, width: 800, height: 600)
+        let target = EditorCanvasScrollView.fitGlideTarget(
+            documentFrame: doc, visibleRect: visible,
+            viewportSize: CGSize(width: 800, height: 600), zoom: 0.5,
+            keepingAxis: nil)
+        XCTAssertEqual(target.midX, doc.midX, accuracy: 0.001)
+        XCTAssertEqual(target.midY, doc.midY, accuracy: 0.001)
+    }
+
     func test_fitWidthZoom_respectsManualCeiling() {
         // A tiny image would compute 1000/50 = 20, clamped to manualMaxZoom.
         let z = EditorCanvasScrollView.fitWidthZoom(

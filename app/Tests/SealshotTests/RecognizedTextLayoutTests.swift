@@ -97,4 +97,40 @@ final class RecognizedTextLayoutTests: XCTestCase {
         // x=0.11 lands on the space (char index 1) -> nil.
         XCTAssertNil(lay.wordRange(at: CGPoint(x: 0.11, y: 0.1)))
     }
+
+    // MARK: Highlight follows the character boxes
+
+    /// "ill WWW": narrow glyphs then wide ones, as proportional text measures.
+    /// An even split of the line (1/7 per character) would put the word "WWW"'s
+    /// highlight about a character too far left; its boxes say where it is.
+    private func proportionalLine() -> RecognizedLine {
+        let widths: [CGFloat] = [0.03, 0.03, 0.03, 0.06, 0.25, 0.25, 0.25]
+        var x: CGFloat = 0.05
+        let boxes = widths.map { w -> CGRect in
+            defer { x += w }
+            return CGRect(x: x, y: 0.4, width: w, height: 0.1)
+        }
+        let box = CGRect(x: 0.05, y: 0.4, width: 0.9, height: 0.1)
+        let quad = TextQuad(topLeft: CGPoint(x: 0.05, y: 0.4), topRight: CGPoint(x: 0.95, y: 0.4),
+                            bottomRight: CGPoint(x: 0.95, y: 0.5), bottomLeft: CGPoint(x: 0.05, y: 0.5))
+        return RecognizedLine(text: "ill WWW", box: box, charBoxes: boxes, quad: quad)
+    }
+
+    func testWordHighlightQuadMatchesItsCharacterBoxes() {
+        let lay = RecognizedTextLayout(lines: [proportionalLine()])
+        let word = TextSelection(anchor: TextPosition(line: 0, char: 4),
+                                 focus: TextPosition(line: 0, char: 7))
+        let q = try! XCTUnwrap(lay.quads(for: word).first)
+        XCTAssertEqual(q.topLeft.x, 0.20, accuracy: 1e-6, "starts at the first W")
+        XCTAssertEqual(q.topRight.x, 0.95, accuracy: 1e-6, "ends at the last W")
+    }
+
+    func testNarrowWordHighlightDoesNotSpillIntoNeighbour() {
+        let lay = RecognizedTextLayout(lines: [proportionalLine()])
+        let word = TextSelection(anchor: TextPosition(line: 0, char: 0),
+                                 focus: TextPosition(line: 0, char: 3))
+        let q = try! XCTUnwrap(lay.quads(for: word).first)
+        XCTAssertEqual(q.topLeft.x, 0.05, accuracy: 1e-6)
+        XCTAssertEqual(q.topRight.x, 0.14, accuracy: 1e-6, "ends after the last l, not into the space")
+    }
 }

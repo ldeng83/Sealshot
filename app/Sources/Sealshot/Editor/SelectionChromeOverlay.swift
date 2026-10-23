@@ -378,8 +378,15 @@ final class SelectionChromeOverlay: NSView {
             // and shrinking the width hides trailing columns. No content-
             // height clamp here — the grow-only clamp belongs to STYLE edits
             // (a bigger font must not clip), never to manual resizing.
-            let resized = resizeGeometry(originalGeometry, handle: handle, to: dragPoint,
+            var resized = resizeGeometry(originalGeometry, handle: handle, to: dragPoint,
                                          freeform: event.modifierFlags.contains(.shift))
+            // A step's handle stops where its Size slider stops, and the size
+            // it lands on is the size for the next step.
+            if case let .badge(center, radius) = resized {
+                let clamped = BadgeSizing.clamp(radius, for: state.visibleImageSize)
+                resized = .badge(center: center, radius: clamped)
+                state.badgeRadius = clamped
+            }
             state.annotations[idx] = Annotation(id: id, geometry: resized,
                                                 style: state.annotations[idx].style, transform: transform)
         case let .rotating(id, center, startAngle, startTransform):

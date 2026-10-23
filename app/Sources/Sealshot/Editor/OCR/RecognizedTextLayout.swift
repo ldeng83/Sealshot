@@ -213,10 +213,27 @@ struct RecognizedTextLayout: Equatable {
             let hi = (l == end.line) ? end.char : n
             let loC = max(0, min(lo, n)), hiC = max(loC, min(hi, n))
             guard loC < hiC else { continue }
-            out.append(quad.span(fromFraction: CGFloat(loC) / CGFloat(n),
-                                 toFraction: CGFloat(hiC) / CGFloat(n)))
+            let (from, to) = spanFractions(line: l, from: loC, to: hiC)
+            out.append(quad.span(fromFraction: from, toFraction: to))
         }
         return out
+    }
+
+    /// Where characters `lo..<hi` start and end along a line's quad, 0 → 1.
+    /// Taken from the char boxes, which follow Vision's token geometry, and
+    /// projected onto the quad so they follow its tilt. An even split by
+    /// character count drifts on proportional text — "ill WWW" put the word
+    /// highlight a glyph off — while the copied text, read by index, was right.
+    private func spanFractions(line l: Int, from lo: Int, to hi: Int) -> (CGFloat, CGFloat) {
+        let n = lines[l].characters.count
+        let boxes = lines[l].charBoxes
+        guard let quad = lines[l].quad, boxes.count == n else {
+            return (CGFloat(lo) / CGFloat(n), CGFloat(hi) / CGFloat(n))
+        }
+        let first = boxes[lo], last = boxes[hi - 1]
+        let from = quad.parameter(at: CGPoint(x: first.minX, y: first.midY))
+        let to = quad.parameter(at: CGPoint(x: last.maxX, y: last.midY))
+        return (from, max(from, to))
     }
 
     /// One union rect per covered line, for highlight drawing (normalized).

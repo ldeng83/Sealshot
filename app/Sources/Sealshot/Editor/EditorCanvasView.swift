@@ -1094,7 +1094,8 @@ final class EditorCanvasView: NSView {
                               outlineColor: previewOutline, outlineWidth: state.outlineWidth * scale)
             case .badge:
                 let dist = hypot(current.x - start.x, current.y - start.y)
-                let radius = (dist < 8 ? state.badgeRadius : max(8, dist)) * scale
+                let radius = (dist < 8 ? state.badgeRadius
+                              : BadgeSizing.clamp(dist, for: state.visibleImageSize)) * scale
                 let c = viewPoint(forImagePoint: start, scale: scale, origin: drawRect.origin)
                 if let oc = previewOutline {
                     let rr = radius + state.outlineWidth * scale
@@ -2070,7 +2071,10 @@ final class EditorCanvasView: NSView {
         case .badge:
             let dragged = rectFromPoints(start, end)
             let isClick = dragged.width < 8 && dragged.height < 8
-            let radius = isClick ? state.badgeRadius : max(8, hypot(end.x - start.x, end.y - start.y))
+            let radius = isClick ? state.badgeRadius
+                : BadgeSizing.clamp(hypot(end.x - start.x, end.y - start.y), for: state.visibleImageSize)
+            // A step drawn to size sets the size for the next one, like a resize.
+            if !isClick { state.badgeRadius = radius }
             commitDrawnAnnotation(Annotation(
                 geometry: .badge(center: start, radius: radius),
                 style: badgeCreationStyle(state: state)

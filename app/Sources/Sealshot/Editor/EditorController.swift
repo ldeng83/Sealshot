@@ -399,26 +399,10 @@ final class EditorController {
     /// The editor is a PERSISTENT SHELL: closing it orders the window out but
     /// keeps this controller alive. Without this flag, a cancelled capture
     /// started from the floating window would order a deliberately-closed
-    /// editor straight back onto the screen — and `presentCaptured` would open
-    /// it for successful ones. Read before `dismissWithAutoSave` hides it,
+    /// editor straight back onto the screen. (A successful capture DOES open
+    /// it — see `presentCaptured`.) Read before `dismissWithAutoSave` hides it,
     /// since afterwards the window always reads as hidden.
     private(set) var wasVisibleBeforeCapture = false
-
-    /// True from the moment the user CLOSES the editor window until they open
-    /// it again on purpose.
-    ///
-    /// A closed window is a decision, and a capture is not a request to undo
-    /// it: the shot still lands in the Library and the recent strip, it just
-    /// doesn't drag the big window back over whatever the user is documenting.
-    /// Only real closes count — `dismiss()` unhooks the close observer before
-    /// closing, so programmatic teardown (locking, swapping sessions) is not
-    /// mistaken for the user reaching for the red button.
-    private(set) var userClosedWindow = false
-
-    /// The editor is being shown deliberately — by ⌘⇧E, the Library shortcut,
-    /// the Dock, the menu bar, a new canvas, or an opened file. Whatever the
-    /// user closed, they have now asked for it back.
-    private func noteEditorShownDeliberately() { userClosedWindow = false }
 
     /// Set while a capture started from the floating panel is in flight, so the
     /// ordinary cancel path stands aside for `restoreAfterFloatingCapture()`.
@@ -635,7 +619,6 @@ final class EditorController {
                         + "encryptionEnabled=\(EncryptionSession.shared.isEnabled) "
                         + "unlocked=\(EncryptionSession.shared.isUnlocked)")
         defer { WindowDiag.windows("end of presentMostRecent") }
-        noteEditorShownDeliberately()
         if let controller = windowController {
             controller.selectTab(.editor)
             // Bring the existing window above other apps — a bare
@@ -746,7 +729,6 @@ final class EditorController {
     func presentEmpty() {
         WindowDiag.note("presentEmpty: hasController=\(windowController != nil)")
         defer { WindowDiag.windows("end of presentEmpty") }
-        noteEditorShownDeliberately()
         if let controller = windowController {
             controller.selectTab(.editor)
             controller.window?.makeKeyAndOrderFront(nil)
@@ -761,7 +743,6 @@ final class EditorController {
     /// capture swap) instead of the centered default, so the window doesn't
     /// jump.
     private func presentEmptyState(on screenFrame: NSRect, preservingFrame: NSRect? = nil) {
-        noteEditorShownDeliberately()
         dismiss()
 
         let contentRect = initialContentRect(screenFrame: screenFrame)
@@ -790,7 +771,6 @@ final class EditorController {
             ) { [weak self] _ in
                 Task { @MainActor in
                     self?.rememberSelectedTab()
-                    self?.userClosedWindow = true
                     self?.windowController = nil
                     self?.removeFrameSaveObservers()
                     // Nothing pushes `hasSelection: false` once the controller
@@ -817,6 +797,16 @@ final class EditorController {
     /// When a window is already on-screen, the window's frame is preserved
     /// across the switch — only the canvas content is swapped. This avoids
     /// the layout jump that would otherwise happen on every thumbnail click.
+    /// Explain a capture that couldn't be opened. With no editor window yet —
+    /// launch, or a Dock click reopening the remembered capture — open an empty
+    /// one first: the failure used to go to a nil controller, which left the app
+    /// running with no window and no message (a capture saved by a newer build
+    /// made every launch look dead).
+    private func presentOpenFailure(url: URL, error: Error) {
+        if windowController == nil { presentEmpty() }
+        windowController?.presentOpenFailure(url: url, error: error)
+    }
+
     func presentFile(_ url: URL) {
         WindowDiag.note("presentFile: \(url.lastPathComponent)")
         defer { WindowDiag.windows("end of presentFile") }
@@ -918,7 +908,7 @@ final class EditorController {
                        log: log, type: .error, url.path, String(describing: error))
                 // Don't leave a silent no-op with a desynced strip highlight —
                 // restore the strip to the still-open file and explain why.
-                windowController?.presentOpenFailure(url: url, error: error)
+                presentOpenFailure(url: url, error: error)
                 return
             }
             // Orientation first: the crop, the resize and every other stored
@@ -987,7 +977,7 @@ final class EditorController {
                        log: log, type: .error, url.path, String(describing: error))
                 // Same recovery as the .seal path — restore the strip highlight
                 // and explain, instead of a silent no-op.
-                windowController?.presentOpenFailure(url: url, error: error)
+                presentOpenFailure(url: url, error: error)
                 return
             }
             canvasImage = pkg.source ?? pkg.composite
@@ -1418,7 +1408,6 @@ final class EditorController {
                               fitFresh: Bool = false) {
         // A window is being built: whatever route asked for it, the editor is
         // on screen again from here.
-        noteEditorShownDeliberately()
         // Tear down any prior session synchronously.
         dismiss()
 
@@ -1448,7 +1437,6 @@ final class EditorController {
             ) { [weak self] _ in
                 Task { @MainActor in
                     self?.rememberSelectedTab()
-                    self?.userClosedWindow = true
                     self?.windowController = nil
                     self?.removeFrameSaveObservers()
                     // See the empty-state close observer above: nothing else

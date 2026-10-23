@@ -533,17 +533,12 @@ final class CaptureCoordinator {
     /// usually still there, and every capture re-summoned it — which is the one
     /// behaviour the panel exists to prevent. Clicking the panel is the user
     /// saying "not the big window"; ⤢ is how they ask for it back.
-    /// The third suppression is the user having CLOSED the editor window. A
-    /// window someone closed on purpose should not be reopened by a background
-    /// action; captures keep landing in the Library either way, and any
-    /// deliberate way in (⌘⇧E, the Library shortcut, the Dock, the menu bar)
-    /// clears it. Distinct from merely hidden: `dismissWithAutoSave` hides the
-    /// window for the duration of a capture and expects it back.
+    ///
+    /// A CLOSED editor window does not suppress it: taking a capture is asking
+    /// to see it, so the window reopens on the new shot.
     nonisolated static func shouldOpenEditor(output: CaptureOutput, savedFileURL: URL?,
-                                             startedFromFloatingWindow: Bool,
-                                             userClosedEditor: Bool = false) -> Bool {
+                                             startedFromFloatingWindow: Bool) -> Bool {
         if output == .clipboard && savedFileURL == nil { return false }
-        if userClosedEditor { return false }
         return !startedFromFloatingWindow
     }
 
@@ -579,8 +574,7 @@ final class CaptureCoordinator {
         })
         guard Self.shouldOpenEditor(output: config.defaultOutput,
                                     savedFileURL: result.savedFileURL,
-                                    startedFromFloatingWindow: fromFloatingWindow,
-                                    userClosedEditor: editor.userClosedWindow) else {
+                                    startedFromFloatingWindow: fromFloatingWindow) else {
             os_log("capture kept quiet — editor stays hidden", log: log, type: .info)
             return
         }

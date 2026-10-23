@@ -33,30 +33,12 @@ final class FloatingCaptureQuietTests: XCTestCase {
             output: .both, savedFileURL: saved, startedFromFloatingWindow: true))
     }
 
-    // MARK: A window the user closed stays closed
-
-    /// Closing the editor is a decision. A capture landing afterwards must not
-    /// drag the window back over whatever the user is documenting — the shot
-    /// still reaches the Library and the recent strip either way.
-    func testCaptureAfterTheUserClosedTheEditor_leavesItClosed() {
-        XCTAssertFalse(CaptureCoordinator.shouldOpenEditor(
-            output: .file, savedFileURL: saved, startedFromFloatingWindow: false,
-            userClosedEditor: true))
-    }
-
-    /// Saving to both destinations is still a save — same rule.
-    func testCaptureToBoth_afterClosing_leavesItClosed() {
-        XCTAssertFalse(CaptureCoordinator.shouldOpenEditor(
-            output: .both, savedFileURL: saved, startedFromFloatingWindow: false,
-            userClosedEditor: true))
-    }
-
-    /// The window merely being hidden for the capture is NOT closing it —
-    /// `dismissWithAutoSave` hides it every time and expects it back.
-    func testCaptureWithTheEditorMerelyHidden_stillOpensIt() {
+    /// A closed editor window is not a suppression: a saved capture — to a file
+    /// or to both destinations — opens the editor on the new shot whether or
+    /// not the user closed the window earlier.
+    func testSavedCapture_toBoth_opensTheEditor() {
         XCTAssertTrue(CaptureCoordinator.shouldOpenEditor(
-            output: .file, savedFileURL: saved, startedFromFloatingWindow: false,
-            userClosedEditor: false))
+            output: .both, savedFileURL: saved, startedFromFloatingWindow: false))
     }
 
     /// Clipboard-only wins regardless of origin — there is nothing to show.

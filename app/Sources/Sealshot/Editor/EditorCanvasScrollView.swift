@@ -275,7 +275,12 @@ final class EditorCanvasScrollView: NSScrollView {
     /// The zoom observation only fires on an actual change, so re-clicking a Fit
     /// button after a hand-pan (which offset the scroll without changing zoom)
     /// would otherwise leave the image where the pan left it instead of fitting.
-    private func recenterAfterFit(animated: Bool = true) {
+    ///
+    /// `keepingAxis` holds the scroll position on that axis instead of centring:
+    /// Fit Width / Fit Height only fit ONE axis, so the other usually overflows
+    /// and centring it would yank a tall (or wide) capture to its middle.
+    private func recenterAfterFit(animated: Bool = true,
+                                  keepingAxis: NSLayoutConstraint.Orientation? = nil) {
         applyZoomToCanvasFrame()        // native size + refresh the focus limit
         guard animated else {
             // Image switches land instantly — a glide on every switch reads as
@@ -294,9 +299,8 @@ final class EditorCanvasScrollView: NSScrollView {
         let z = Self.clampZoom(state.zoom)
         let viewport = contentSize
         guard let doc = documentView, viewport.width > 0, viewport.height > 0, z > 0 else { return }
-        let w = viewport.width / z, h = viewport.height / z
-        var target = CGRect(x: doc.frame.midX - w / 2, y: doc.frame.midY - h / 2,
-                            width: w, height: h)
+        var target = Self.fitGlideTarget(documentFrame: doc.frame, visibleRect: contentView.bounds,
+                                         viewportSize: viewport, zoom: z, keepingAxis: keepingAxis)
         // Clamp/center the final origin the same way manual scrolling would so
         // the animation settles without a post-hoc correction. `state.zoom`
         // was already set by the caller; the glide's completion settles the
@@ -424,7 +428,7 @@ final class EditorCanvasScrollView: NSScrollView {
             padding: EditorCanvasView.imagePadding,
             scrollerWidth: reservedScrollerWidth()
         )
-        recenterAfterFit()
+        recenterAfterFit(keepingAxis: .vertical)
     }
 
     func fitToHeight() {
@@ -438,7 +442,7 @@ final class EditorCanvasScrollView: NSScrollView {
             padding: EditorCanvasView.imagePadding,
             scrollerWidth: reservedScrollerWidth()
         )
-        recenterAfterFit()
+        recenterAfterFit(keepingAxis: .horizontal)
     }
 
     /// Zoom + scroll so `rect` (visible-image coords) fills the viewport. This is
@@ -674,6 +678,23 @@ final class EditorCanvasScrollView: NSScrollView {
     /// fit upscales — leaving a scrollbar that scrolls a few pixels. The 0.5pt
     /// safety keeps float rounding from tipping the document past the clip.
     private static let fitSafety: CGFloat = 0.5
+
+    /// The visible rect (document coords) a fit glide lands on: the viewport at
+    /// `zoom`, centred on the document — except along `keepingAxis`, where it
+    /// stays centred on the CURRENT visible rect so that axis doesn't scroll.
+    /// The caller still clamps it through the clip view.
+    static func fitGlideTarget(
+        documentFrame doc: CGRect,
+        visibleRect visible: CGRect,
+        viewportSize viewport: CGSize,
+        zoom z: CGFloat,
+        keepingAxis: NSLayoutConstraint.Orientation?
+    ) -> CGRect {
+        let w = viewport.width / z, h = viewport.height / z
+        let midX = keepingAxis == .horizontal ? visible.midX : doc.midX
+        let midY = keepingAxis == .vertical ? visible.midY : doc.midY
+        return CGRect(x: midX - w / 2, y: midY - h / 2, width: w, height: h)
+    }
 
     /// Zoom so the zoomed document (image + its padding border) spans the full
     /// viewport width. Unlike `fitZoom` (whole-image fit, capped at 100%),
