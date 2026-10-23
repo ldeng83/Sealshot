@@ -76,7 +76,9 @@ final class EditorStateAdoptSettingsTests: XCTestCase {
 
         XCTAssertEqual(new.badgeFillColor, .systemGreen)
         XCTAssertEqual(new.badgeNumberColor, .black)
-        XCTAssertEqual(new.badgeRadius, 24)
+        // Step SIZE is per image (BadgeSizingTests): the new image starts at
+        // its own default rather than inheriting the old one's.
+        XCTAssertEqual(new.badgeRadius, BadgeSizing.defaultRadius(for: new.visibleImageSize))
     }
 
     func testAdopt_copiesBlurSettings() {

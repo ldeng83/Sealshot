@@ -299,7 +299,10 @@ enum EditorToolPropertiesViews {
                 return state.badgeRadius
             }()
             let radiusHandler = BadgeRadiusHandler(state: state, id: id)
-            let radiusSlider = StyleEditSlider(value: Double(currentRadius), minValue: 8, maxValue: 60,
+            let radiusRange = BadgeSizing.range(for: state.visibleImageSize)
+            let radiusSlider = StyleEditSlider(value: Double(currentRadius),
+                                               minValue: Double(radiusRange.lowerBound),
+                                               maxValue: Double(radiusRange.upperBound),
                                                target: radiusHandler,
                                                action: #selector(BadgeRadiusHandler.changed(_:)))
             radiusSlider.onDragStart = { [weak state] in state?.beginStyleEdit(); state?.recordUndoCheckpoint(action: "Change Size") }
@@ -308,6 +311,7 @@ enum EditorToolPropertiesViews {
             radiusSlider.translatesAutoresizingMaskIntoConstraints = false
             radiusSlider.widthAnchor.constraint(greaterThanOrEqualToConstant: 200).isActive = true
             objc_setAssociatedObject(radiusSlider, &BadgeRadiusHandler.assocKey, radiusHandler, .OBJC_ASSOCIATION_RETAIN)
+            radiusHandler.follow(radiusSlider)
             stack.addArrangedSubview(radiusSlider)
 
             toolSection(stack, "Outline width")
@@ -2001,7 +2005,10 @@ enum EditorToolPropertiesViews {
                                                   ("Outline", outlineChip(state: state))]))
 
         toolSection(stack, "Size")
-        stack.addArrangedSubview(defaultSlider(value: Double(state.badgeRadius), min: 8, max: 60) {
+        let radiusRange = BadgeSizing.range(for: state.visibleImageSize)
+        stack.addArrangedSubview(defaultSlider(value: Double(state.badgeRadius),
+                                               min: Double(radiusRange.lowerBound),
+                                               max: Double(radiusRange.upperBound)) {
             state.badgeRadius = CGFloat($0)
         })
 
@@ -2882,6 +2889,24 @@ private final class BadgeRadiusHandler: NSObject {
     init(state: EditorState, id: UUID) { self.state = state; self.id = id }
     @objc func changed(_ sender: NSSlider) {
         state.updateBadgeRadius(id: id, CGFloat(sender.doubleValue))
+    }
+
+    /// Keep `slider` on the badge's radius while it changes elsewhere — a canvas
+    /// handle drag, which defers the panel's rebuild until mouse-up, so without
+    /// this the slider jumped only once the drag ended.
+    func follow(_ slider: NSSlider) {
+        withObservationTracking {
+            _ = state.annotations
+        } onChange: { [weak self, weak slider] in
+            Task { @MainActor in
+                guard let self, let slider else { return }
+                if let a = self.state.annotations.first(where: { $0.id == self.id }),
+                   case let .badge(_, r) = a.geometry, abs(slider.doubleValue - Double(r)) > 0.01 {
+                    slider.doubleValue = Double(r)
+                }
+                self.follow(slider)
+            }
+        }
     }
 }
 

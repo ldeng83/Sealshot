@@ -437,7 +437,23 @@ final class EditorState {
     }
     /// Radius (image space) used when CREATING the next badge by a click.
     /// Existing badges keep their stored radius.
-    var badgeRadius: CGFloat = 34   // 50% of the 8…60 size slider
+    ///
+    /// Remembered per IMAGE, not carried across images: the last size set in
+    /// this image (tool slider, a selected step's slider or handle drag), else
+    /// the image's last step, else a default scaled to the image — always
+    /// within the image's `BadgeSizing.range`.
+    var badgeRadius: CGFloat {
+        get {
+            let size = visibleImageSize
+            let lastStep = annotations.last { if case .badge = $0.geometry { true } else { false } }
+            if let chosen = chosenBadgeRadius { return BadgeSizing.clamp(chosen, for: size) }
+            if case let .badge(_, r)? = lastStep?.geometry { return BadgeSizing.clamp(r, for: size) }
+            return BadgeSizing.defaultRadius(for: size)
+        }
+        set { chosenBadgeRadius = newValue }
+    }
+    /// The step size last set in this image; nil until the user sets one.
+    private var chosenBadgeRadius: CGFloat?
 
     // MARK: Per-tool color memory
 
@@ -992,7 +1008,7 @@ final class EditorState {
         textFontSize = other.textFontSize
         textIsBold = other.textIsBold
         textFontFamily = other.textFontFamily
-        badgeRadius = other.badgeRadius
+        // Step size is per image (see `badgeRadius`) — not carried.
         blurMode = other.blurMode
         blurStrength = other.blurStrength
         blurSolidOpacity = other.blurSolidOpacity
@@ -1245,6 +1261,7 @@ final class EditorState {
                                 enhancedImage: nil, showingEnhanced: false, pristineSource: nil)
         fresh.isReadOnly = isReadOnly
         fresh.adoptCreationSettings(from: self)
+        fresh.chosenBadgeRadius = chosenBadgeRadius   // same image: keep its step size
         // ALWAYS carry the image-asset bytes, even though revert drops the
         // annotations that reference them — assets are never pruned (see
         // `imageAssets`), so the autosave after a revert must not strip
@@ -1713,12 +1730,14 @@ final class EditorState {
     }
 
     /// Set a specific badge's radius (objects-list inline editing). No-op unless
-    /// `id` names a badge annotation. Radius is clamped to ≥ 4.
+    /// `id` names a badge annotation. Radius is clamped to the image's
+    /// `BadgeSizing.range`, and becomes the size for the next step.
     func updateBadgeRadius(id: UUID, _ radius: CGFloat) {
         guard let idx = annotations.firstIndex(where: { $0.id == id }),
               case let .badge(center, _) = annotations[idx].geometry else { return }
-        annotations[idx].geometry = .badge(center: center, radius: max(4, radius))
-        badgeRadius = radius
+        let clamped = BadgeSizing.clamp(radius, for: visibleImageSize)
+        annotations[idx].geometry = .badge(center: center, radius: clamped)
+        badgeRadius = clamped
         isDirty = true
     }
 
